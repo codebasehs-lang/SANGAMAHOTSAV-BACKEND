@@ -55,6 +55,7 @@ module.exports = (sequelize) => {
       },
       // Field 5
       comingFrom: { type: DataTypes.STRING(150), allowNull: false },
+      facilitatorName: { type: DataTypes.STRING(150), allowNull: true },
       // Field 6 & 7
       arrivalDate: { type: DataTypes.DATEONLY, allowNull: true },
       arrivalTime: { type: DataTypes.TIME, allowNull: true },
