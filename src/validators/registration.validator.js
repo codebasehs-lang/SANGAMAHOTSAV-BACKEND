@@ -28,6 +28,10 @@ const baseRules = [
     .optional({ checkFalsy: true })
     .isString()
     .isLength({ max: 150 }),
+  body('facilitatorName')
+    .optional({ checkFalsy: true })
+    .isString()
+    .isLength({ max: 150 }),
   optionalEnum('nonAttendingType', NON_ATTENDING_TYPE),
   optionalEnum('sharedAccommodation', SHARED_ACCOMMODATION),
   optionalEnum('familyAccommodation', FAMILY_ACCOMMODATION),

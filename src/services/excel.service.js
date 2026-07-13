@@ -21,6 +21,7 @@ class ExcelService {
       { header: 'Category', key: 'devoteeCategory', width: 14 },
       { header: 'Mobile', key: 'mobileNumber', width: 15 },
       { header: 'Coming From', key: 'comingFrom', width: 18 },
+      { header: 'Facilitator', key: 'facilitatorName', width: 20 },
       { header: 'Arrival Date', key: 'arrivalDate', width: 14 },
       { header: 'Arrival Time', key: 'arrivalTime', width: 12 },
       { header: 'Departure Date', key: 'departureDate', width: 14 },
