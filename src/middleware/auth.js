@@ -25,14 +25,25 @@ const authGuard = (req, _res, next) => {
 };
 
 /**
- * Restricts access to admins. In V1 only the ADMIN role exists,
- * but this keeps role checks explicit and future-proof.
+ * Restricts access to admins (ADMIN or VIEWER can enter the panel).
  */
 const requireAdmin = (req, _res, next) => {
-  if (!req.user || req.user.role !== ADMIN_ROLE.ADMIN) {
+  const role = req.user?.role;
+  if (role !== ADMIN_ROLE.ADMIN && role !== ADMIN_ROLE.VIEWER) {
     return next(ApiError.forbidden(messages.FORBIDDEN));
   }
   return next();
 };
 
-module.exports = { authGuard, requireAdmin };
+/**
+ * Restricts write operations to ADMIN role only.
+ * VIEWER role gets a 403.
+ */
+const requireEditor = (req, _res, next) => {
+  if (!req.user || req.user.role !== ADMIN_ROLE.ADMIN) {
+    return next(ApiError.forbidden('This action requires Editor access. Viewers have read-only access.'));
+  }
+  return next();
+};
+
+module.exports = { authGuard, requireAdmin, requireEditor };

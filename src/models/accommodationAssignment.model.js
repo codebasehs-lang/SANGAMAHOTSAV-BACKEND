@@ -37,6 +37,11 @@ module.exports = (sequelize) => {
         allowNull: true,
         validate: { isUrl: true },
       },
+      // Additional Family Accommodation room (nullable — only when devotee selected it)
+      additionalHotelName: { type: DataTypes.STRING(150), allowNull: true },
+      additionalHotelAddress: { type: DataTypes.STRING(255), allowNull: true },
+      additionalRoomNumber: { type: DataTypes.STRING(30), allowNull: true },
+      additionalHotelMapLink: { type: DataTypes.STRING(500), allowNull: true },
       status: {
         type: DataTypes.ENUM(...values(ASSIGNMENT_STATUS)),
         allowNull: false,

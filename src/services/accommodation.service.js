@@ -6,6 +6,7 @@ const ApiError = require('../utils/ApiError');
 const {
   ASSIGNMENT_STATUS,
   ACCOMMODATION_STATUS,
+  PAYMENT_STATUS,
 } = require('../constants/enums');
 
 /**
@@ -24,6 +25,13 @@ class AccommodationService {
       throw ApiError.notFound('Registration not found.');
     }
 
+    if (registration.paymentStatus !== PAYMENT_STATUS.APPROVED) {
+      throw ApiError.badRequest(
+        'Payment must be approved before assigning accommodation.',
+        [{ field: 'paymentStatus', message: 'Payment not yet approved.' }]
+      );
+    }
+
     const status = payload.status || ASSIGNMENT_STATUS.ASSIGNED;
 
     return sequelize.transaction(async (t) => {
@@ -38,6 +46,10 @@ class AccommodationService {
         hotelAddress: payload.hotelAddress,
         roomNumber: payload.roomNumber,
         hotelMapLink: payload.hotelMapLink || null,
+        additionalHotelName: payload.additionalHotelName || null,
+        additionalHotelAddress: payload.additionalHotelAddress || null,
+        additionalRoomNumber: payload.additionalRoomNumber || null,
+        additionalHotelMapLink: payload.additionalHotelMapLink || null,
         status,
         assignedBy: adminId,
         assignedAt: status === ASSIGNMENT_STATUS.ASSIGNED ? new Date() : null,

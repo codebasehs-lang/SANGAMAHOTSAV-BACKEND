@@ -57,9 +57,25 @@ const baseRules = [
     .optional({ checkFalsy: true })
     .isFloat({ min: 0 })
     .withMessage('amountPaid must be a positive number.'),
+  body('paymentReferenceId')
+    .optional({ checkFalsy: true })
+    .isString()
+    .isLength({ max: 100 })
+    .withMessage('paymentReferenceId must be at most 100 characters.'),
+  body('payeeAccountName')
+    .optional({ checkFalsy: true })
+    .isString()
+    .isLength({ max: 150 })
+    .withMessage('payeeAccountName must be at most 150 characters.'),
   body('comments').optional({ checkFalsy: true }).isString().isLength({ max: 2000 }),
   body('familyMembers')
     .optional({ nullable: true })
+    .customSanitizer((val) => {
+      if (typeof val === 'string') {
+        try { return JSON.parse(val); } catch { return val; }
+      }
+      return val;
+    })
     .isArray()
     .withMessage('familyMembers must be an array.'),
   body('familyMembers.*.name')
@@ -72,6 +88,12 @@ const baseRules = [
     .withMessage('Each family member age must be 0-120.'),
   body('services')
     .optional({ nullable: true })
+    .customSanitizer((val) => {
+      if (typeof val === 'string') {
+        try { return JSON.parse(val); } catch { return val; }
+      }
+      return val;
+    })
     .isArray()
     .withMessage('services must be an array.'),
   body('services.*')

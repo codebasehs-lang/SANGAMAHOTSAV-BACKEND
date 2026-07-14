@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const helmet = require('helmet');
 const cors = require('cors');
 
@@ -30,6 +31,9 @@ function createApp() {
 
   // Observability
   app.use(requestLogger);
+
+  // Serve uploaded payment screenshots
+  app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
   // Routes
   app.use(env.apiPrefix, apiRoutes);

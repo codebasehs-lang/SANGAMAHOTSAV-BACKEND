@@ -152,6 +152,56 @@ class SmsService {
     return { data: rows, meta: buildMeta({ count, page, limit }) };
   }
 
+  /**
+   * Sends a single payment-confirmed SMS to a devotee immediately after
+   * payment approval. Creates a lightweight campaign record so the send
+   * is fully auditable in the SMS logs.
+   */
+  async sendPaymentConfirmation(registration, adminId) {
+    const template = TEMPLATES[SMS_CAMPAIGN_TYPE.PAYMENT_CONFIRMED];
+    const renderedMessage = renderTemplate(template, {
+      name: registration.initiatedName || registration.name,
+    });
+
+    const campaign = await smsRepository.createCampaign({
+      type: SMS_CAMPAIGN_TYPE.PAYMENT_CONFIRMED,
+      messageTemplate: template,
+      seminarHallId: null,
+      totalRecipients: 1,
+      status: SMS_CAMPAIGN_STATUS.PROCESSING,
+      triggeredBy: adminId,
+    });
+
+    const result = await sendSms({
+      mobileNumber: registration.mobileNumber,
+      message: renderedMessage,
+      variables: { var1: registration.initiatedName || registration.name || '' },
+    });
+
+    await smsRepository.createLog({
+      campaignId: campaign.id,
+      registrationId: registration.id,
+      mobileNumber: registration.mobileNumber,
+      renderedMessage,
+      status: result.success ? SMS_LOG_STATUS.SENT : SMS_LOG_STATUS.FAILED,
+      providerMessageId: result.providerMessageId,
+      errorMessage: result.error,
+      sentAt: result.success ? new Date() : null,
+    });
+
+    await smsRepository.updateCampaign(campaign.id, {
+      sentCount: result.success ? 1 : 0,
+      failedCount: result.success ? 0 : 1,
+      status: result.success ? SMS_CAMPAIGN_STATUS.COMPLETED : SMS_CAMPAIGN_STATUS.FAILED,
+    });
+
+    logger.info('Payment confirmation SMS sent', {
+      registrationId: registration.id,
+      mobileNumber: registration.mobileNumber,
+      success: result.success,
+    });
+  }
+
   /** Fills template tokens from a registration + active hall. */
   _render(template, registration, hall) {
     const assignment = registration.assignment || {};

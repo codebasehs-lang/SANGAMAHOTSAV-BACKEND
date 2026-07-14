@@ -9,7 +9,12 @@ const messages = require('../constants/messages');
 class RegistrationController {
   // Public
   create = asyncHandler(async (req, res) => {
-    const registration = await registrationService.create(req.body);
+    const payload = { ...req.body };
+    if (req.file) {
+      // Store relative URL path so the frontend can fetch it
+      payload.paymentScreenshot = `/uploads/payment-screenshots/${req.file.filename}`;
+    }
+    const registration = await registrationService.create(payload);
     return ApiResponse.created(res, {
       data: registration,
       message: 'Registration submitted successfully.',
@@ -44,6 +49,22 @@ class RegistrationController {
   remove = asyncHandler(async (req, res) => {
     await registrationService.remove(req.params.id);
     return ApiResponse.send(res, { message: messages.DELETED });
+  });
+
+  approvePayment = asyncHandler(async (req, res) => {
+    const registration = await registrationService.approvePayment(req.params.id, req.user.id);
+    return ApiResponse.send(res, {
+      data: registration,
+      message: 'Payment approved successfully.',
+    });
+  });
+
+  unapprovePayment = asyncHandler(async (req, res) => {
+    const registration = await registrationService.unapprovePayment(req.params.id);
+    return ApiResponse.send(res, {
+      data: registration,
+      message: 'Payment approval reverted.',
+    });
   });
 
   export = asyncHandler(async (req, res) => {
