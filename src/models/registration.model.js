@@ -7,6 +7,7 @@ const {
   ADDITIONAL_FAMILY_ACCOMMODATION,
   PREFERRED_SUBJECT,
   ACCOMMODATION_STATUS,
+  PAYMENT_STATUS,
   values,
 } = require('../constants/enums');
 
@@ -108,6 +109,14 @@ module.exports = (sequelize) => {
         allowNull: true,
         defaultValue: 0,
         validate: { min: 0 },
+      },
+      paymentReferenceId: { type: DataTypes.STRING(100), allowNull: true },
+      payeeAccountName: { type: DataTypes.STRING(150), allowNull: true },
+      paymentScreenshot: { type: DataTypes.STRING(500), allowNull: true },
+      paymentStatus: {
+        type: DataTypes.ENUM(...values(PAYMENT_STATUS)),
+        allowNull: false,
+        defaultValue: PAYMENT_STATUS.PENDING,
       },
       // Field 20
       comments: { type: DataTypes.TEXT, allowNull: true },

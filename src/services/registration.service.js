@@ -1,9 +1,10 @@
 const registrationRepository = require('../repositories/registration.repository');
 const excelService = require('./excel.service');
+const smsService = require('./sms.service');
 const ApiError = require('../utils/ApiError');
 const messages = require('../constants/messages');
 const { getPagination, buildMeta } = require('../utils/pagination');
-const { ACCOMMODATION_STATUS, NON_ATTENDING_TYPE } = require('../constants/enums');
+const { ACCOMMODATION_STATUS, NON_ATTENDING_TYPE, PAYMENT_STATUS } = require('../constants/enums');
 
 const SORTABLE_FIELDS = new Set([
   'id',
@@ -85,6 +86,29 @@ class RegistrationService {
     await this.getById(id);
     await registrationRepository.destroy(id);
     return true;
+  }
+
+  /** Admin: approve payment for a registration. */
+  async approvePayment(id) {
+    const registration = await this.getById(id);
+    if (registration.paymentStatus === PAYMENT_STATUS.APPROVED) {
+      return registration; // already approved, idempotent
+    }
+    await registrationRepository.update(id, { paymentStatus: PAYMENT_STATUS.APPROVED });
+    const updated = await this.getById(id);
+    // Fire-and-forget SMS — don't let a delivery failure break the approval
+    smsService.sendPaymentConfirmation(updated, adminId).catch(() => {});
+    return updated;
+  }
+
+  /** Admin: unapprove (revert) payment for a registration. */
+  async unapprovePayment(id) {
+    const registration = await this.getById(id);
+    if (registration.paymentStatus === PAYMENT_STATUS.PENDING) {
+      return registration; // already pending, idempotent
+    }
+    await registrationRepository.update(id, { paymentStatus: PAYMENT_STATUS.PENDING });
+    return this.getById(id);
   }
 
   /** Admin: export all matching registrations to an xlsx buffer. */

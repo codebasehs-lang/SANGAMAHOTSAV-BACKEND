@@ -1,7 +1,7 @@
 const { Router } = require('express');
 const smsController = require('../controllers/sms.controller');
 const validate = require('../middleware/validate');
-const { authGuard, requireAdmin } = require('../middleware/auth');
+const { authGuard, requireAdmin, requireEditor } = require('../middleware/auth');
 const {
   sendCampaignRules,
   listCampaignRules,
@@ -15,6 +15,7 @@ router.use(authGuard, requireAdmin);
 
 router.post(
   '/campaigns',
+  requireEditor,
   validate(sendCampaignRules),
   smsController.sendCampaign
 );

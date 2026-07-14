@@ -8,25 +8,37 @@ class DashboardService {
   async getSummary() {
     const [
       totalRegistrations,
+      discipleRegistrations,
+      nonDiscipleRegistrations,
       devoteesRequiringStay,
       assignedRooms,
       pendingAssignments,
+      paymentsNeedingApproval,
+      totalAmountReceived,
       smsSent,
       feedbackReceived,
     ] = await Promise.all([
       dashboardRepository.totalRegistrations(),
+      dashboardRepository.discipleRegistrations(),
+      dashboardRepository.nonDiscipleRegistrations(),
       dashboardRepository.devoteesRequiringStay(),
       dashboardRepository.assignedRooms(),
       dashboardRepository.pendingAssignments(),
+      dashboardRepository.paymentsNeedingApproval(),
+      dashboardRepository.totalAmountReceived(),
       dashboardRepository.smsSent(),
       dashboardRepository.feedbackReceived(),
     ]);
 
     return {
       totalRegistrations,
+      discipleRegistrations,
+      nonDiscipleRegistrations,
       devoteesRequiringStay,
       assignedRooms,
       pendingAssignments,
+      paymentsNeedingApproval,
+      totalAmountReceived,
       smsSent,
       feedbackReceived,
     };

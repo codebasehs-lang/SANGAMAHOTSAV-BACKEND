@@ -1,7 +1,7 @@
 const { Router } = require('express');
 const accommodationController = require('../controllers/accommodation.controller');
 const validate = require('../middleware/validate');
-const { authGuard, requireAdmin } = require('../middleware/auth');
+const { authGuard, requireAdmin, requireEditor } = require('../middleware/auth');
 const {
   assignRules,
   updateRules,
@@ -19,6 +19,7 @@ router.get('/', validate(listQueryRules), accommodationController.list);
 // Assign (create or upsert) accommodation for a registration
 router.post(
   '/:registrationId',
+  requireEditor,
   validate(assignRules),
   accommodationController.assign
 );
