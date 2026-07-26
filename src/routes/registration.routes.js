@@ -16,7 +16,7 @@ const router = Router();
 router.post(
   '/',
   uploadPaymentScreenshot,
-  // validate(createRegistrationRules), // temporarily disabled for debugging
+  validate(createRegistrationRules),
   registrationController.create
 );
 
