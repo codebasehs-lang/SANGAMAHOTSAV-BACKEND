@@ -97,6 +97,8 @@ module.exports = (sequelize) => {
       preferredSubjectOther: { type: DataTypes.STRING(200), allowNull: true },
       // Field 16 — array of service enum keys
       services: { type: DataTypes.JSON, allowNull: true },
+      // Field 17 — donation items selected by user [{ id, amount }]
+      donationItems: { type: DataTypes.JSON, allowNull: true },
       // Field 17
       ownFourWheeler: {
         type: DataTypes.BOOLEAN,

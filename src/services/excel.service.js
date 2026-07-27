@@ -31,6 +31,7 @@ class ExcelService {
       { header: 'Journey Prasad', key: 'needJourneyPrasad', width: 14 },
       { header: 'Preferred Subject', key: 'preferredSubject', width: 22 },
       { header: 'Services', key: 'services', width: 30 },
+      { header: 'Donations', key: 'donations', width: 40 },
       { header: 'Own 4-Wheeler', key: 'ownFourWheeler', width: 14 },
       { header: 'Amount Paid', key: 'amountPaid', width: 12 },
       { header: 'Accom. Status', key: 'accommodationStatus', width: 14 },
@@ -45,6 +46,18 @@ class ExcelService {
 
     registrations.forEach((r) => {
       const plain = typeof r.get === 'function' ? r.get({ plain: true }) : r;
+      const donations = Array.isArray(plain.donationItems)
+        ? plain.donationItems
+            .map((d) => {
+              const id = d.id || '';
+              const label = id
+                .replace(/[-_]/g, ' ')
+                .replace(/\b\w/g, (m) => m.toUpperCase());
+              const amount = Number(d.amount || 0).toLocaleString();
+              return `${label} – ₹ ${amount}`;
+            })
+            .join(', ')
+        : '';
       sheet.addRow({
         ...plain,
         needJourneyPrasad: plain.needJourneyPrasad ? 'Yes' : 'No',
@@ -52,6 +65,7 @@ class ExcelService {
         services: Array.isArray(plain.services)
           ? plain.services.join(', ')
           : '',
+        donations,
         hotelName: plain.assignment?.hotelName || '',
         roomNumber: plain.assignment?.roomNumber || '',
       });

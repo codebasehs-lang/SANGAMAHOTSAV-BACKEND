@@ -100,6 +100,24 @@ const baseRules = [
     .optional()
     .isIn(SERVICE_VALUES)
     .withMessage('One or more selected services are invalid.'),
+  body('donationItems')
+    .optional({ nullable: true })
+    .customSanitizer((val) => {
+      if (typeof val === 'string') {
+        try { return JSON.parse(val); } catch { return val; }
+      }
+      return val;
+    })
+    .isArray()
+    .withMessage('donationItems must be an array.'),
+  body('donationItems.*.id')
+    .optional()
+    .isString()
+    .withMessage('Each donation item must have an id.'),
+  body('donationItems.*.amount')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('Each donation item amount must be a positive number.'),
 ];
 
 const createRegistrationRules = [
