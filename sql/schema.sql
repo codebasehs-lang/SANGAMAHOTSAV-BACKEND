@@ -35,7 +35,7 @@ CREATE TABLE `registrations` (
   `name`                            VARCHAR(150) NOT NULL,
   `age`                             INT UNSIGNED NOT NULL,
   `initiated_name`                  VARCHAR(150) NULL,
-  `devotee_category`                ENUM('DISCIPLE','NON_DISCIPLE') NOT NULL,
+  `devotee_category`                ENUM('DISCIPLE','NON_DISCIPLE','BRAHMACHARI') NOT NULL,
   `family_members`                  JSON NULL,
   `mobile_number`                   VARCHAR(15) NOT NULL,
   `coming_from`                     VARCHAR(150) NOT NULL,

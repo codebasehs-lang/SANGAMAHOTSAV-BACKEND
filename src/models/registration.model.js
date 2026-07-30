@@ -99,6 +99,8 @@ module.exports = (sequelize) => {
       services: { type: DataTypes.JSON, allowNull: true },
       // Field 17 — donation items selected by user [{ id, amount }]
       donationItems: { type: DataTypes.JSON, allowNull: true },
+      // Field 18 — extra charge codes selected by user ['EXTRA_DEVOTEE','CHILD_12_PLUS']
+      extraCharges: { type: DataTypes.JSON, allowNull: true },
       // Field 17
       ownFourWheeler: {
         type: DataTypes.BOOLEAN,
