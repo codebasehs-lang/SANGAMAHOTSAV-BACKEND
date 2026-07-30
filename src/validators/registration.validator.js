@@ -118,6 +118,21 @@ const baseRules = [
     .optional()
     .isFloat({ min: 0 })
     .withMessage('Each donation item amount must be a positive number.'),
+  body('extraCharges')
+    .optional({ nullable: true })
+    .customSanitizer((val) => {
+      if (typeof val === 'string') {
+        try { return JSON.parse(val); } catch { return val; }
+      }
+      return val;
+    })
+    .isArray()
+    .withMessage('extraCharges must be an array.'),
+  body('extraCharges.*')
+    .optional()
+    .isString()
+    .isLength({ max: 100 })
+    .withMessage('Each extra charge code must be a short string.'),
 ];
 
 const createRegistrationRules = [

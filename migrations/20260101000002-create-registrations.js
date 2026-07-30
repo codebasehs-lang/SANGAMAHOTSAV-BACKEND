@@ -13,7 +13,7 @@ module.exports = {
       age: { type: Sequelize.INTEGER.UNSIGNED, allowNull: false },
       initiated_name: { type: Sequelize.STRING(150), allowNull: true },
       devotee_category: {
-        type: Sequelize.ENUM('DISCIPLE', 'NON_DISCIPLE'),
+        type: Sequelize.ENUM('DISCIPLE', 'NON_DISCIPLE', 'BRAHMACHARI'),
         allowNull: false,
       },
       family_members: { type: Sequelize.JSON, allowNull: true },

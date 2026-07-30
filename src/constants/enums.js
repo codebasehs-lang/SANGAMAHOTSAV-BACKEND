@@ -11,6 +11,7 @@ const ADMIN_ROLE = Object.freeze({
 const DEVOTEE_CATEGORY = Object.freeze({
   DISCIPLE: 'DISCIPLE',
   NON_DISCIPLE: 'NON_DISCIPLE',
+  BRAHMACHARI: 'BRAHMACHARI',
 });
 
 const NON_ATTENDING_TYPE = Object.freeze({
