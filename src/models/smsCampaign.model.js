@@ -2,6 +2,7 @@ const { Model, DataTypes } = require('sequelize');
 const {
   SMS_CAMPAIGN_TYPE,
   SMS_CAMPAIGN_STATUS,
+  MESSAGE_CHANNEL,
   values,
 } = require('../constants/enums');
 
@@ -36,6 +37,11 @@ module.exports = (sequelize) => {
       type: {
         type: DataTypes.ENUM(...values(SMS_CAMPAIGN_TYPE)),
         allowNull: false,
+      },
+      channel: {
+        type: DataTypes.ENUM(...values(MESSAGE_CHANNEL)),
+        allowNull: false,
+        defaultValue: MESSAGE_CHANNEL.SMS,
       },
       messageTemplate: { type: DataTypes.TEXT, allowNull: false },
       seminarHallId: {
@@ -72,7 +78,7 @@ module.exports = (sequelize) => {
       modelName: 'SmsCampaign',
       tableName: 'sms_campaigns',
       underscored: true,
-      indexes: [{ fields: ['type'] }, { fields: ['created_at'] }],
+      indexes: [{ fields: ['type'] }, { fields: ['channel'] }, { fields: ['created_at'] }],
     }
   );
 

@@ -124,6 +124,11 @@ const SMS_LOG_STATUS = Object.freeze({
   FAILED: 'FAILED',
 });
 
+const MESSAGE_CHANNEL = Object.freeze({
+  SMS: 'SMS',
+  WHATSAPP: 'WHATSAPP',
+});
+
 const values = (obj) => Object.values(obj);
 
 module.exports = {
@@ -141,5 +146,6 @@ module.exports = {
   SMS_CAMPAIGN_TYPE,
   SMS_CAMPAIGN_STATUS,
   SMS_LOG_STATUS,
+  MESSAGE_CHANNEL,
   values,
 };

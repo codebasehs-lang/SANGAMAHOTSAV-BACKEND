@@ -2,6 +2,7 @@ const registrationRepository = require('../repositories/registration.repository'
 const excelService = require('./excel.service');
 const smsService = require('./sms.service');
 const ApiError = require('../utils/ApiError');
+const logger = require('../utils/logger');
 const messages = require('../constants/messages');
 const { getPagination, buildMeta } = require('../utils/pagination');
 const { ACCOMMODATION_STATUS, NON_ATTENDING_TYPE, PAYMENT_STATUS } = require('../constants/enums');
@@ -86,15 +87,21 @@ class RegistrationService {
   }
 
   /** Admin: approve payment for a registration. */
-  async approvePayment(id) {
+  async approvePayment(id, adminId) {
     const registration = await this.getById(id);
     if (registration.paymentStatus === PAYMENT_STATUS.APPROVED) {
       return registration; // already approved, idempotent
     }
     await registrationRepository.update(id, { paymentStatus: PAYMENT_STATUS.APPROVED });
     const updated = await this.getById(id);
-    // Fire-and-forget SMS — don't let a delivery failure break the approval
-    smsService.sendPaymentConfirmation(updated, adminId).catch(() => {});
+    // Fire-and-forget — don't let a delivery failure break the approval
+    smsService.sendPaymentConfirmation(updated, adminId).catch((err) => {
+      logger.error('Payment confirmation WhatsApp dispatch failed', {
+        registrationId: updated.id,
+        mobileNumber: updated.mobileNumber,
+        error: err.message,
+      });
+    });
     return updated;
   }
 

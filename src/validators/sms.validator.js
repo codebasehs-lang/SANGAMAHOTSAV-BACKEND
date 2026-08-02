@@ -1,5 +1,5 @@
 const { body, param, query } = require('express-validator');
-const { SMS_CAMPAIGN_TYPE, values } = require('../constants/enums');
+const { SMS_CAMPAIGN_TYPE, MESSAGE_CHANNEL, values } = require('../constants/enums');
 
 const sendCampaignRules = [
   body('type')
@@ -22,12 +22,17 @@ const sendCampaignRules = [
     .optional()
     .isInt({ min: 1 })
     .withMessage('Each registration id must be a positive integer.'),
+  body('channel')
+    .optional({ nullable: true, checkFalsy: true })
+    .isIn(values(MESSAGE_CHANNEL))
+    .withMessage('Invalid message channel.'),
 ];
 
 const listCampaignRules = [
   query('page').optional({ checkFalsy: true }).isInt({ min: 1 }),
   query('limit').optional({ checkFalsy: true }).isInt({ min: 1, max: 100 }),
   query('type').optional({ checkFalsy: true }).isIn(values(SMS_CAMPAIGN_TYPE)),
+  query('channel').optional({ checkFalsy: true }).isIn(values(MESSAGE_CHANNEL)),
 ];
 
 const campaignIdParam = [
