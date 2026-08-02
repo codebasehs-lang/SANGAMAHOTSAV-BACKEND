@@ -1,5 +1,8 @@
 const ExcelJS = require('exceljs');
 
+const GENDER_LABEL = { MALE: 'Prabhuji', FEMALE: 'Mataji' };
+const genderLabel = (g) => GENDER_LABEL[g] || g || '';
+
 /**
  * Generates an .xlsx workbook buffer from registration rows.
  * Kept as a dedicated service so export formatting is reusable
@@ -22,6 +25,8 @@ class ExcelService {
       { header: 'Mobile', key: 'mobileNumber', width: 15 },
       { header: 'Coming From', key: 'comingFrom', width: 18 },
       { header: 'Facilitator', key: 'facilitatorName', width: 20 },
+      { header: 'Gender', key: 'gender', width: 10 },
+      { header: 'Family Members', key: 'familyMembers', width: 35 },
       { header: 'Arrival Date', key: 'arrivalDate', width: 14 },
       { header: 'Arrival Time', key: 'arrivalTime', width: 12 },
       { header: 'Departure Date', key: 'departureDate', width: 14 },
@@ -60,12 +65,19 @@ class ExcelService {
         : '';
       sheet.addRow({
         ...plain,
+        gender: genderLabel(plain.gender),
         needJourneyPrasad: plain.needJourneyPrasad ? 'Yes' : 'No',
         ownFourWheeler: plain.ownFourWheeler ? 'Yes' : 'No',
         services: Array.isArray(plain.services)
           ? plain.services.join(', ')
           : '',
         donations,
+        familyMembers: Array.isArray(plain.familyMembers)
+          ? plain.familyMembers
+              .filter((m) => m.name)
+              .map((m) => `${m.name} (${m.age ?? '?'}${m.gender ? ', ' + genderLabel(m.gender) : ''})`)
+              .join(', ')
+          : '',
         hotelName: plain.assignment?.hotelName || '',
         roomNumber: plain.assignment?.roomNumber || '',
       });

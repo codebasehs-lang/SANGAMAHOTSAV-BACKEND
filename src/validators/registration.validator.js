@@ -32,6 +32,10 @@ const baseRules = [
     .optional({ checkFalsy: true })
     .isString()
     .isLength({ max: 150 }),
+  body('gender')
+    .optional({ checkFalsy: true })
+    .isIn(['MALE', 'FEMALE'])
+    .withMessage('gender must be MALE or FEMALE.'),
   optionalEnum('nonAttendingType', NON_ATTENDING_TYPE),
   optionalEnum('sharedAccommodation', SHARED_ACCOMMODATION),
   optionalEnum('familyAccommodation', FAMILY_ACCOMMODATION),

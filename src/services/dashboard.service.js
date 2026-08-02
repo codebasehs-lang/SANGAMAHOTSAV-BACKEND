@@ -17,6 +17,7 @@ class DashboardService {
       totalAmountReceived,
       smsSent,
       feedbackReceived,
+      attendeeCounts,
     ] = await Promise.all([
       dashboardRepository.totalRegistrations(),
       dashboardRepository.discipleRegistrations(),
@@ -28,6 +29,7 @@ class DashboardService {
       dashboardRepository.totalAmountReceived(),
       dashboardRepository.smsSent(),
       dashboardRepository.feedbackReceived(),
+      dashboardRepository.attendeeCounts(),
     ]);
 
     return {
@@ -41,6 +43,9 @@ class DashboardService {
       totalAmountReceived,
       smsSent,
       feedbackReceived,
+      totalAttendees: attendeeCounts.totalAttendees,
+      totalAdults: attendeeCounts.totalAdults,
+      totalChildren: attendeeCounts.totalChildren,
     };
   }
 }

@@ -4,6 +4,7 @@ const {
   SmsLog,
   Feedback,
 } = require('../models');
+const { Sequelize } = require('sequelize');
 const {
   ACCOMMODATION_STATUS,
   ASSIGNMENT_STATUS,
@@ -76,6 +77,39 @@ class DashboardRepository {
 
   feedbackReceived() {
     return Feedback.count();
+  }
+
+  /** Returns { totalAttendees, totalAdults, totalChildren } across all registrations + their family members. */
+  async attendeeCounts() {
+    const rows = await Registration.findAll({
+      attributes: ['age', 'familyMembers'],
+      raw: true,
+    });
+
+    let totalAttendees = 0;
+    let totalAdults = 0;
+    let totalChildren = 0;
+
+    for (const r of rows) {
+      const mainAge = Number(r.age) || 0;
+      const members = Array.isArray(r.familyMembers) ? r.familyMembers : [];
+
+      // Main registrant
+      totalAttendees += 1;
+      if (mainAge >= 18) totalAdults += 1;
+      else totalChildren += 1;
+
+      // Family members
+      for (const m of members) {
+        if (!m.name) continue;
+        const age = Number(m.age) || 0;
+        totalAttendees += 1;
+        if (age >= 18) totalAdults += 1;
+        else totalChildren += 1;
+      }
+    }
+
+    return { totalAttendees, totalAdults, totalChildren };
   }
 }
 
