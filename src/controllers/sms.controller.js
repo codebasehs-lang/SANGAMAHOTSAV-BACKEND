@@ -6,9 +6,10 @@ const messages = require('../constants/messages');
 class SmsController {
   sendCampaign = asyncHandler(async (req, res) => {
     const result = await smsService.sendCampaign(req.body, req.user.sub);
+    const channelLabel = result.channel === 'WHATSAPP' ? 'WhatsApp' : 'SMS';
     return ApiResponse.created(res, {
       data: result,
-      message: 'SMS campaign processed.',
+      message: `${channelLabel} campaign processed.`,
     });
   });
 

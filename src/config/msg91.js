@@ -11,6 +11,12 @@ module.exports = {
   senderId: env.msg91.senderId,
   templateId: env.msg91.templateId,
   route: env.msg91.route,
+  whatsappIntegratedNumber: env.msg91.whatsappIntegratedNumber,
+  whatsappTemplateId: env.msg91.whatsappTemplateId,
+  whatsappPaymentTemplateId: env.msg91.whatsappPaymentTemplateId,
   baseUrl: 'https://control.msg91.com/api/v5',
   enabled: Boolean(env.msg91.authKey),
+  whatsappEnabled: Boolean(
+    env.msg91.authKey && env.msg91.whatsappIntegratedNumber
+  ),
 };

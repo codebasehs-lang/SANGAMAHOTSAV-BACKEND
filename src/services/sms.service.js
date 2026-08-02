@@ -1,6 +1,7 @@
 const smsRepository = require('../repositories/sms.repository');
 const seminarHallService = require('./seminarHall.service');
-const { sendSms } = require('../utils/msg91Client');
+const { sendSms, sendWhatsapp } = require('../utils/msg91Client');
+const msg91Config = require('../config/msg91');
 const { TEMPLATES, renderTemplate } = require('../constants/smsTemplates');
 const { getPagination, buildMeta } = require('../utils/pagination');
 const ApiError = require('../utils/ApiError');
@@ -9,6 +10,7 @@ const {
   SMS_CAMPAIGN_TYPE,
   SMS_CAMPAIGN_STATUS,
   SMS_LOG_STATUS,
+  MESSAGE_CHANNEL,
 } = require('../constants/enums');
 
 /**
@@ -21,7 +23,8 @@ const {
  * Admin-triggered only; no scheduling in V1.
  */
 class SmsService {
-  async sendCampaign({ type, registrationIds, message }, adminId) {
+  async sendCampaign({ type, registrationIds, message, channel }, adminId) {
+    const selectedChannel = channel || MESSAGE_CHANNEL.WHATSAPP;
     let template;
     if (type === SMS_CAMPAIGN_TYPE.CUSTOM) {
       if (!message || !message.trim()) {
@@ -58,6 +61,7 @@ class SmsService {
 
     const campaign = await smsRepository.createCampaign({
       type,
+      channel: selectedChannel,
       messageTemplate: template,
       seminarHallId: activeHall ? activeHall.id : null,
       totalRecipients: eligible.length,
@@ -73,11 +77,17 @@ class SmsService {
       const variables = this._buildVariables(registration, activeHall);
 
       // eslint-disable-next-line no-await-in-loop
-      const result = await sendSms({
-        mobileNumber: registration.mobileNumber,
-        message,
-        variables,
-      });
+      const result =
+        selectedChannel === MESSAGE_CHANNEL.SMS
+          ? await sendSms({
+              mobileNumber: registration.mobileNumber,
+              message,
+              variables,
+            })
+          : await sendWhatsapp({
+              mobileNumber: registration.mobileNumber,
+              message,
+            });
 
       // eslint-disable-next-line no-await-in-loop
       await smsRepository.createLog({
@@ -108,9 +118,10 @@ class SmsService {
       status,
     });
 
-    logger.info('SMS campaign completed', {
+    logger.info('Message campaign completed', {
       campaignId: campaign.id,
       type,
+      channel: selectedChannel,
       sentCount,
       failedCount,
     });
@@ -118,6 +129,7 @@ class SmsService {
     return {
       campaignId: campaign.id,
       type,
+      channel: selectedChannel,
       totalRecipients: eligible.length,
       sentCount,
       failedCount,
@@ -129,6 +141,7 @@ class SmsService {
     const { page, limit, offset } = getPagination(query);
     const where = {};
     if (query.type) where.type = query.type;
+    if (query.channel) where.channel = query.channel;
 
     const { rows, count } = await smsRepository.findCampaigns({
       limit,
@@ -159,12 +172,12 @@ class SmsService {
    */
   async sendPaymentConfirmation(registration, adminId) {
     const template = TEMPLATES[SMS_CAMPAIGN_TYPE.PAYMENT_CONFIRMED];
-    const renderedMessage = renderTemplate(template, {
-      name: registration.initiatedName || registration.name,
-    });
+    const devoteeName = registration.initiatedName || registration.name || '';
+    const renderedMessage = renderTemplate(template, { name: devoteeName });
 
     const campaign = await smsRepository.createCampaign({
       type: SMS_CAMPAIGN_TYPE.PAYMENT_CONFIRMED,
+      channel: MESSAGE_CHANNEL.WHATSAPP,
       messageTemplate: template,
       seminarHallId: null,
       totalRecipients: 1,
@@ -172,10 +185,16 @@ class SmsService {
       triggeredBy: adminId,
     });
 
-    const result = await sendSms({
+    const result = await sendWhatsapp({
       mobileNumber: registration.mobileNumber,
       message: renderedMessage,
-      variables: { var1: registration.initiatedName || registration.name || '' },
+      templateName: msg91Config.whatsappPaymentTemplateId || msg91Config.whatsappTemplateId,
+      components: [
+        {
+          type: 'body',
+          parameters: [{ type: 'text', text: devoteeName }],
+        },
+      ],
     });
 
     await smsRepository.createLog({
@@ -195,11 +214,18 @@ class SmsService {
       status: result.success ? SMS_CAMPAIGN_STATUS.COMPLETED : SMS_CAMPAIGN_STATUS.FAILED,
     });
 
-    logger.info('Payment confirmation SMS sent', {
+    logger.info('Payment confirmation WhatsApp sent', {
       registrationId: registration.id,
       mobileNumber: registration.mobileNumber,
       success: result.success,
     });
+    if (!result.success) {
+      logger.warn('Payment confirmation WhatsApp failed', {
+        registrationId: registration.id,
+        mobileNumber: registration.mobileNumber,
+        error: result.error,
+      });
+    }
   }
 
   /** Fills template tokens from a registration + active hall. */

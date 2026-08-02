@@ -39,6 +39,10 @@ const env = {
     senderId: process.env.MSG91_SENDER_ID || '',
     templateId: process.env.MSG91_TEMPLATE_ID || '',
     route: process.env.MSG91_ROUTE || '4',
+    whatsappIntegratedNumber:
+      process.env.MSG91_WHATSAPP_INTEGRATED_NUMBER || '',
+    whatsappTemplateId: process.env.MSG91_WHATSAPP_TEMPLATE_ID || '',
+    whatsappPaymentTemplateId: process.env.MSG91_WHATSAPP_PAYMENT_TEMPLATE_ID || '',
   },
 };
 

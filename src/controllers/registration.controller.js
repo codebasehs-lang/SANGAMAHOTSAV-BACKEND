@@ -52,7 +52,7 @@ class RegistrationController {
   });
 
   approvePayment = asyncHandler(async (req, res) => {
-    const registration = await registrationService.approvePayment(req.params.id, req.user.id);
+    const registration = await registrationService.approvePayment(req.params.id, req.user.sub);
     return ApiResponse.send(res, {
       data: registration,
       message: 'Payment approved successfully.',
