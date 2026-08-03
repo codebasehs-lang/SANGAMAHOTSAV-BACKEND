@@ -10,11 +10,9 @@ const { SMS_CAMPAIGN_TYPE } = require('./enums');
 const TEMPLATES = Object.freeze({
   [SMS_CAMPAIGN_TYPE.PAYMENT_CONFIRMED]: [
     'Hare Krishna {{name}},',
-    '',
-    'Your payment has been verified and your booking for Sangamahotsav is confirmed!',
-    '',
+    'Your payment has been verified and your booking for Sanga Mahotsav is confirmed!',
     'We look forward to welcoming you.',
-    'Sangamahotsav Team',
+    'Sanga Mahotsav Team',
   ].join('\n'),
 
   [SMS_CAMPAIGN_TYPE.ACCOMMODATION]: [

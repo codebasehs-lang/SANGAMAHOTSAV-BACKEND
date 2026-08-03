@@ -20,6 +20,7 @@ router.get('/health', (req, res) =>
 
 // Feature routes (mounted in later phases):
 router.use('/auth', require('./auth.routes'));
+router.use('/registrant-auth', require('./registrant.auth.routes'));
 router.use('/registrations', require('./registration.routes'));
 router.use('/accommodations', require('./accommodation.routes'));
 router.use('/hotels', require('./hotel.routes'));
@@ -27,5 +28,6 @@ router.use('/seminar-halls', require('./seminarHall.routes'));
 router.use('/sms', require('./sms.routes'));
 router.use('/feedbacks', require('./feedback.routes'));
 router.use('/dashboard', require('./dashboard.routes'));
+router.use('/donations', require('./donation.routes'));
 
 module.exports = router;

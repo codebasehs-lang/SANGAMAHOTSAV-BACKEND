@@ -54,6 +54,10 @@ module.exports = (sequelize) => {
         allowNull: false,
         unique: true,
       },
+      passwordHash: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+      },
       // Field 5
       comingFrom: { type: DataTypes.STRING(150), allowNull: false },
       facilitatorName: { type: DataTypes.STRING(150), allowNull: true },

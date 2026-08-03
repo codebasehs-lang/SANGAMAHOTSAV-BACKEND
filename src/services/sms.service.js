@@ -189,12 +189,6 @@ class SmsService {
       mobileNumber: registration.mobileNumber,
       message: renderedMessage,
       templateName: msg91Config.whatsappPaymentTemplateId || msg91Config.whatsappTemplateId,
-      components: [
-        {
-          type: 'body',
-          parameters: [{ type: 'text', text: devoteeName }],
-        },
-      ],
     });
 
     await smsRepository.createLog({
