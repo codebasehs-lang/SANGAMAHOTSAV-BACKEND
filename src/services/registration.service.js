@@ -4,6 +4,7 @@ const smsService = require('./sms.service');
 const ApiError = require('../utils/ApiError');
 const logger = require('../utils/logger');
 const messages = require('../constants/messages');
+const password = require('../utils/password');
 const { getPagination, buildMeta } = require('../utils/pagination');
 const { ACCOMMODATION_STATUS, NON_ATTENDING_TYPE, PAYMENT_STATUS } = require('../constants/enums');
 
@@ -43,6 +44,10 @@ class RegistrationService {
       data.accommodationStatus = ACCOMMODATION_STATUS.NOT_REQUIRED;
     } else {
       data.accommodationStatus = ACCOMMODATION_STATUS.PENDING;
+    }
+
+    if (!data.passwordHash && data.mobileNumber && data.age !== undefined && data.age !== null) {
+      data.passwordHash = await password.hash(`${data.mobileNumber}#${data.age}`);
     }
 
     return registrationRepository.create(data);

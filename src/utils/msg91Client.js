@@ -74,9 +74,6 @@ async function sendWhatsapp({ mobileNumber, message, templateName, components })
   }
 
   const resolvedTemplate = templateName || msg91Config.whatsappTemplateId;
-  const resolvedComponents = components || [
-    { type: 'body', parameters: [{ type: 'text', text: message }] },
-  ];
 
   try {
     const response = await fetch(
@@ -96,12 +93,7 @@ async function sendWhatsapp({ mobileNumber, message, templateName, components })
             template: {
               name: resolvedTemplate,
               language: { code: 'en' },
-              to_and_components: [
-                {
-                  to: [normalizeMobile(mobileNumber)],
-                  components: resolvedComponents,
-                },
-              ],
+              to: [normalizeMobile(mobileNumber)],
             },
           },
         }),
