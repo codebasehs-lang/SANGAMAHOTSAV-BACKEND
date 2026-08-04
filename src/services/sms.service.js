@@ -172,6 +172,9 @@ class SmsService {
     const template = TEMPLATES[SMS_CAMPAIGN_TYPE.PAYMENT_CONFIRMED];
     const devoteeName = registration.initiatedName || registration.name || '';
     const paymentStatusLabel = 'Confirmed';
+    const templatePlaceholders = Array.from(
+      new Set((template.match(/\{\{\s*(\w+)\s*\}\}/g) || []).map((token) => token))
+    );
     const renderedMessage = renderTemplate(template, {
       name: devoteeName,
       status: paymentStatusLabel,
@@ -201,6 +204,26 @@ class SmsService {
           },
         ]
       : null;
+
+    logger.info('Payment confirmation WhatsApp payload prepared', {
+      registrationId: registration.id,
+      mobileNumber: registration.mobileNumber,
+      adminId,
+      template,
+      paymentTemplateName,
+      languageCode: env.whatsapp.languageCode,
+      whatsappGraphBaseUrl: env.whatsapp.graphBaseUrl,
+      whatsappApiVersion: env.whatsapp.apiVersion,
+      whatsappPhoneNumberId: env.whatsapp.phoneNumberId,
+      whatsappBusinessAccountId: env.whatsapp.businessAccountId,
+      whatsappAccessTokenConfigured: Boolean(env.whatsapp.accessToken),
+      whatsappAppSecretConfigured: Boolean(env.whatsapp.appSecret),
+      whatsappWebhookVerifyTokenConfigured: Boolean(env.whatsapp.webhookVerifyToken),
+      templatePlaceholders,
+      templateBodyParameterCount: templateComponents?.[0]?.parameters?.length || 0,
+      templateBodyParams: templateComponents?.[0]?.parameters?.map((param) => param.text) || [],
+      renderedMessage,
+    });
 
     const result = await sendWhatsapp({
       mobileNumber: registration.mobileNumber,
