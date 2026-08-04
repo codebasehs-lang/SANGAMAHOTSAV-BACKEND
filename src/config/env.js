@@ -34,15 +34,17 @@ const env = {
     password: process.env.SEED_ADMIN_PASSWORD || 'Admin@12345',
   },
 
-  msg91: {
-    authKey: process.env.MSG91_AUTH_KEY || '',
-    senderId: process.env.MSG91_SENDER_ID || '',
-    templateId: process.env.MSG91_TEMPLATE_ID || '',
-    route: process.env.MSG91_ROUTE || '4',
-    whatsappIntegratedNumber:
-      process.env.MSG91_WHATSAPP_INTEGRATED_NUMBER || '',
-    whatsappTemplateId: process.env.MSG91_WHATSAPP_TEMPLATE_ID || '',
-    whatsappPaymentTemplateId: process.env.MSG91_WHATSAPP_PAYMENT_TEMPLATE_ID || '',
+  whatsapp: {
+    graphBaseUrl: process.env.WHATSAPP_GRAPH_BASE_URL || 'https://graph.facebook.com',
+    apiVersion: process.env.WHATSAPP_API_VERSION || 'v23.0',
+    phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || '',
+    businessAccountId: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID || '',
+    accessToken: process.env.WHATSAPP_ACCESS_TOKEN || '',
+    appSecret: process.env.WHATSAPP_APP_SECRET || '',
+    webhookVerifyToken: process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || '',
+    languageCode: process.env.WHATSAPP_LANGUAGE_CODE || 'en',
+    defaultTemplateName: process.env.WHATSAPP_DEFAULT_TEMPLATE_NAME || '',
+    paymentTemplateName: process.env.WHATSAPP_PAYMENT_TEMPLATE_NAME || '',
   },
 };
 

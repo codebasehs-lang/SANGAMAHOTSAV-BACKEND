@@ -21,6 +21,13 @@ class SmsRepository {
     return SmsLog.create(data, options);
   }
 
+  updateLogByProviderMessageId(providerMessageId, data, options = {}) {
+    return SmsLog.update(data, {
+      where: { providerMessageId },
+      ...options,
+    });
+  }
+
   findCampaignById(id) {
     return SmsCampaign.findByPk(id);
   }

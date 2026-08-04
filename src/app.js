@@ -8,6 +8,7 @@ const requestLogger = require('./middleware/requestLogger');
 const notFound = require('./middleware/notFound');
 const errorHandler = require('./middleware/errorHandler');
 const apiRoutes = require('./routes');
+const whatsappWebhookRoutes = require('./routes/whatsappWebhook.routes');
 
 /**
  * Builds and configures the Express application.
@@ -16,6 +17,12 @@ const apiRoutes = require('./routes');
  */
 function createApp() {
   const app = express();
+
+  const rawBodySaver = (req, res, buf) => {
+    if (buf && buf.length > 0) {
+      req.rawBody = buf.toString('utf8');
+    }
+  };
 
   // Security & parsing
   app.set('trust proxy', 1);
@@ -26,7 +33,7 @@ function createApp() {
       credentials: true,
     })
   );
-  app.use(express.json({ limit: '1mb' }));
+  app.use(express.json({ limit: '1mb', verify: rawBodySaver }));
   app.use(express.urlencoded({ extended: true }));
 
   // Observability
@@ -34,6 +41,10 @@ function createApp() {
 
   // Serve uploaded payment screenshots
   app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+  // Meta WhatsApp webhook (verification + events)
+  app.use('/webhooks/whatsapp', whatsappWebhookRoutes);
+  app.use(`${env.apiPrefix}/webhooks/whatsapp`, whatsappWebhookRoutes);
 
   // Routes
   app.use(env.apiPrefix, apiRoutes);
