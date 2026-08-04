@@ -39,4 +39,8 @@ const campaignIdParam = [
   param('campaignId').isInt({ min: 1 }).withMessage('Invalid campaign id.'),
 ];
 
-module.exports = { sendCampaignRules, listCampaignRules, campaignIdParam };
+module.exports = {
+  sendCampaignRules,
+  listCampaignRules,
+  campaignIdParam,
+};

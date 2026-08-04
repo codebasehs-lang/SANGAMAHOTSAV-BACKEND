@@ -124,3 +124,40 @@ Default admin login (change in production): `admin@sangamahotsav.com` / `Admin@1
 | `ECONNREFUSED 127.0.0.1:3306` | MySQL service not running |
 | `Dialect needs to be explicitly supplied` | Ensure `.env` exists and `.sequelizerc` points to `src/config/config.js` |
 | Seeder fails on duplicate admin | Already seeded; run `npm run db:seed:undo` first |
+
+---
+
+## WhatsApp Cloud API Setup (Meta)
+
+This backend now uses Meta WhatsApp Cloud API directly (no MSG91 / D360 transport).
+
+Add these variables to your local `.env`:
+
+```dotenv
+WHATSAPP_GRAPH_BASE_URL=https://graph.facebook.com
+WHATSAPP_API_VERSION=v23.0
+WHATSAPP_PHONE_NUMBER_ID=
+WHATSAPP_BUSINESS_ACCOUNT_ID=
+WHATSAPP_ACCESS_TOKEN=
+WHATSAPP_APP_SECRET=
+WHATSAPP_WEBHOOK_VERIFY_TOKEN=sangamahotsav_verify_token
+WHATSAPP_LANGUAGE_CODE=en
+WHATSAPP_DEFAULT_TEMPLATE_NAME=
+WHATSAPP_PAYMENT_TEMPLATE_NAME=
+```
+
+### Meta Dashboard Webhook Values
+
+In Meta Developer dashboard (Webhook section), use:
+
+- Callback URL: `https://YOUR_DOMAIN/webhooks/whatsapp`
+- Verify token: value of `WHATSAPP_WEBHOOK_VERIFY_TOKEN`
+
+If your API is served under a path/reverse-proxy prefix, keep that in callback URL.
+
+### Webhook Endpoints Implemented
+
+- `GET /webhooks/whatsapp` for subscription verification
+- `POST /webhooks/whatsapp` for message/status events
+
+The POST endpoint verifies `x-hub-signature-256` when `WHATSAPP_APP_SECRET` is configured.

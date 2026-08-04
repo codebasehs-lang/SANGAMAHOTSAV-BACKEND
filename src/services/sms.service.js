@@ -1,7 +1,7 @@
 const smsRepository = require('../repositories/sms.repository');
 const seminarHallService = require('./seminarHall.service');
-const { sendSms, sendWhatsapp } = require('../utils/msg91Client');
-const msg91Config = require('../config/msg91');
+const { sendWhatsapp } = require('../utils/whatsappCloudClient');
+const env = require('../config/env');
 const { TEMPLATES, renderTemplate } = require('../constants/smsTemplates');
 const { getPagination, buildMeta } = require('../utils/pagination');
 const ApiError = require('../utils/ApiError');
@@ -74,20 +74,18 @@ class SmsService {
 
     for (const registration of eligible) {
       const message = this._render(template, registration, activeHall);
-      const variables = this._buildVariables(registration, activeHall);
-
       // eslint-disable-next-line no-await-in-loop
-      const result =
-        selectedChannel === MESSAGE_CHANNEL.SMS
-          ? await sendSms({
-              mobileNumber: registration.mobileNumber,
-              message,
-              variables,
-            })
-          : await sendWhatsapp({
-              mobileNumber: registration.mobileNumber,
-              message,
-            });
+      if (selectedChannel === MESSAGE_CHANNEL.SMS) {
+        throw ApiError.badRequest(
+          'SMS channel is no longer supported in this build. Use WHATSAPP channel with Meta Cloud API.'
+        );
+      }
+
+      const result = await sendWhatsapp({
+        mobileNumber: registration.mobileNumber,
+        message,
+        templateName: env.whatsapp.defaultTemplateName || null,
+      });
 
       // eslint-disable-next-line no-await-in-loop
       await smsRepository.createLog({
@@ -185,10 +183,13 @@ class SmsService {
       triggeredBy: adminId,
     });
 
+    const paymentTemplateName =
+      env.whatsapp.paymentTemplateName || env.whatsapp.defaultTemplateName || null;
+
     const result = await sendWhatsapp({
       mobileNumber: registration.mobileNumber,
       message: renderedMessage,
-      templateName: msg91Config.whatsappPaymentTemplateId || msg91Config.whatsappTemplateId,
+      ...(paymentTemplateName ? { templateName: paymentTemplateName } : {}),
     });
 
     await smsRepository.createLog({
@@ -237,32 +238,6 @@ class SmsService {
     });
   }
 
-  /**
-   * Maps a registration + active seminar hall to the MSG91 DLT
-   * template variables (##var1## .. ##var7##):
-   *   var1 = devotee name
-   *   var2 = assigned hotel name
-   *   var3 = assigned hotel address
-   *   var4 = assigned room number
-   *   var5 = assigned hotel Google Map link
-   *   var6 = active seminar hall name + address
-   *   var7 = active seminar hall Google Map link
-   */
-  _buildVariables(registration, hall) {
-    const assignment = registration.assignment || {};
-    const seminarHall = hall
-      ? [hall.hallName, hall.hallAddress].filter(Boolean).join(', ')
-      : '';
-    return {
-      var1: registration.initiatedName || registration.name || '',
-      var2: assignment.hotelName || '',
-      var3: assignment.hotelAddress || '',
-      var4: assignment.roomNumber || '',
-      var5: assignment.hotelMapLink || '',
-      var6: seminarHall,
-      var7: hall ? hall.hallMapLink || '' : '',
-    };
-  }
 }
 
 module.exports = new SmsService();
