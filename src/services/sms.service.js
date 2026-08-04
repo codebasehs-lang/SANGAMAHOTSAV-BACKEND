@@ -196,7 +196,7 @@ class SmsService {
           {
             type: 'body',
             parameters: [
-              { type: 'text', text: devoteeName },
+              { type: 'text', text: devoteeName, parameter_name: 'name' },
             ],
           },
         ]
