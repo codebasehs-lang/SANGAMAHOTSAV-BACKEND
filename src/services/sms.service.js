@@ -171,13 +171,11 @@ class SmsService {
   async sendPaymentConfirmation(registration, adminId) {
     const template = TEMPLATES[SMS_CAMPAIGN_TYPE.PAYMENT_CONFIRMED];
     const devoteeName = registration.initiatedName || registration.name || '';
-    const paymentStatusLabel = 'Confirmed';
     const templatePlaceholders = Array.from(
       new Set((template.match(/\{\{\s*(\w+)\s*\}\}/g) || []).map((token) => token))
     );
     const renderedMessage = renderTemplate(template, {
       name: devoteeName,
-      status: paymentStatusLabel,
     });
 
     const campaign = await smsRepository.createCampaign({
@@ -198,7 +196,6 @@ class SmsService {
           {
             type: 'body',
             parameters: [
-              { type: 'text', text: paymentStatusLabel },
               { type: 'text', text: devoteeName },
             ],
           },
