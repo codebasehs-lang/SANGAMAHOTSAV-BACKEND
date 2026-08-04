@@ -186,10 +186,20 @@ class SmsService {
     const paymentTemplateName =
       env.whatsapp.paymentTemplateName || env.whatsapp.defaultTemplateName || null;
 
+    const templateComponents = paymentTemplateName
+      ? [
+          {
+            type: 'body',
+            parameters: [{ type: 'text', text: devoteeName }],
+          },
+        ]
+      : null;
+
     const result = await sendWhatsapp({
       mobileNumber: registration.mobileNumber,
       message: renderedMessage,
       ...(paymentTemplateName ? { templateName: paymentTemplateName } : {}),
+      ...(templateComponents ? { components: templateComponents } : {}),
     });
 
     await smsRepository.createLog({
