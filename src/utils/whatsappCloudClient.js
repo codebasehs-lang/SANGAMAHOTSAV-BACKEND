@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const env = require('../config/env');
+const logger = require('./logger');
 
 const WEBHOOK_MODE_SUBSCRIBE = 'subscribe';
 
@@ -34,6 +35,17 @@ async function sendWhatsapp({ mobileNumber, message, templateName, components })
   }
 
   try {
+    logger.info('Sending WhatsApp Cloud API request', {
+      phoneNumberId: env.whatsapp.phoneNumberId,
+      apiVersion: env.whatsapp.apiVersion,
+      mobileNumber: payload.to,
+      messageType: payload.type,
+      templateName: payload.template?.name || null,
+      templateLanguage: payload.template?.language?.code || null,
+      templateComponents: payload.template?.components || [],
+      requestPayload: payload,
+    });
+
     const response = await fetch(
       `${env.whatsapp.graphBaseUrl}/${env.whatsapp.apiVersion}/${env.whatsapp.phoneNumberId}/messages`,
       {
@@ -48,7 +60,20 @@ async function sendWhatsapp({ mobileNumber, message, templateName, components })
 
     const resPayload = await response.json().catch(() => ({}));
 
+    logger.info('WhatsApp Cloud API raw response', {
+      status: response.status,
+      ok: response.ok,
+      response: resPayload,
+    });
+
     if (!response.ok) {
+      logger.warn('WhatsApp Cloud API request failed', {
+        status: response.status,
+        response: resPayload,
+        requestTemplateName: payload.template?.name || null,
+        requestTemplateComponents: payload.template?.components || [],
+      });
+
       const errMsg =
         resPayload.error?.message ||
         resPayload.message ||
