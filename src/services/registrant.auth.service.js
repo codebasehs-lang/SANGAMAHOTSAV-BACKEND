@@ -1,4 +1,6 @@
 const registrationRepository = require('../repositories/registration.repository');
+const smsRepository = require('../repositories/sms.repository');
+const seminarHallService = require('./seminarHall.service');
 const password = require('../utils/password');
 const jwt = require('../utils/jwt');
 const ApiError = require('../utils/ApiError');
@@ -71,11 +73,50 @@ class RegistrantAuthService {
     return { success: true };
   }
 
+  async updateProfilePhoto(registrationId, profilePhotoPath) {
+    const registration = await registrationRepository.findById(registrationId);
+    if (!registration) {
+      throw ApiError.notFound(messages.NOT_FOUND);
+    }
+
+    await registrationRepository.update(registrationId, {
+      profilePhoto: profilePhotoPath,
+    });
+
+    return { profilePhoto: profilePhotoPath };
+  }
+
+  async updatePaymentScreenshot(registrationId, paymentScreenshotPath) {
+    const registration = await registrationRepository.findById(registrationId);
+    if (!registration) {
+      throw ApiError.notFound(messages.NOT_FOUND);
+    }
+
+    if (registration.paymentScreenshot && !registration.allowPaymentScreenshotUpdate) {
+      throw ApiError.forbidden(
+        'Payment screenshot update is currently disabled. Please contact admin.'
+      );
+    }
+
+    await registrationRepository.update(registrationId, {
+      paymentScreenshot: paymentScreenshotPath,
+      allowPaymentScreenshotUpdate: false,
+    });
+
+    return {
+      paymentScreenshot: paymentScreenshotPath,
+      allowPaymentScreenshotUpdate: false,
+    };
+  }
+
   async getProfile(registrationId) {
     const registration = await registrationRepository.findByIdWithAssignment(registrationId);
     if (!registration) {
       throw ApiError.notFound(messages.NOT_FOUND);
     }
+
+    const noticeBoardMessages = await smsRepository.findNoticeBoardMessages({ limit: 5 });
+    const activeSeminarHall = await seminarHallService.getActive();
 
     return {
       id: registration.id,
@@ -102,10 +143,24 @@ class RegistrantAuthService {
       paymentReferenceId: registration.paymentReferenceId,
       payeeAccountName: registration.payeeAccountName,
       paymentScreenshot: registration.paymentScreenshot,
+      allowPaymentScreenshotUpdate: registration.allowPaymentScreenshotUpdate,
+      profilePhoto: registration.profilePhoto,
       paymentStatus: registration.paymentStatus,
       accommodationStatus: registration.accommodationStatus,
       comments: registration.comments,
       assignment: registration.assignment || null,
+      seminarHall: activeSeminarHall
+        ? {
+            hallName: activeSeminarHall.hallName,
+            hallAddress: activeSeminarHall.hallAddress,
+            hallMapLink: activeSeminarHall.hallMapLink,
+          }
+        : null,
+      noticeBoardMessages: noticeBoardMessages.map((item) => ({
+        id: item.id,
+        message: item.messageTemplate,
+        createdAt: item.createdAt,
+      })),
     };
   }
 }

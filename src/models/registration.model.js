@@ -125,6 +125,12 @@ module.exports = (sequelize) => {
       paymentReferenceId: { type: DataTypes.STRING(100), allowNull: true },
       payeeAccountName: { type: DataTypes.STRING(150), allowNull: true },
       paymentScreenshot: { type: DataTypes.STRING(500), allowNull: true },
+      allowPaymentScreenshotUpdate: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
+      profilePhoto: { type: DataTypes.STRING(500), allowNull: true },
       paymentStatus: {
         type: DataTypes.ENUM(...values(PAYMENT_STATUS)),
         allowNull: false,

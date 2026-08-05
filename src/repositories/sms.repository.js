@@ -4,6 +4,7 @@ const {
   Registration,
   AccommodationAssignment,
 } = require('../models');
+const { MESSAGE_CHANNEL, SMS_CAMPAIGN_STATUS } = require('../constants/enums');
 
 /**
  * Data-access layer for SMS campaigns and logs.
@@ -57,6 +58,19 @@ class SmsRepository {
   findAllRecipients() {
     return Registration.findAll({
       include: [{ model: AccommodationAssignment, as: 'assignment' }],
+    });
+  }
+
+  /** Recent Application-channel messages — shown in registrant notice board. */
+  findNoticeBoardMessages({ limit = 5 } = {}) {
+    return SmsCampaign.findAll({
+      where: {
+        channel: MESSAGE_CHANNEL.APPLICATION,
+        status: SMS_CAMPAIGN_STATUS.COMPLETED,
+      },
+      attributes: ['id', 'messageTemplate', 'createdAt'],
+      order: [['created_at', 'DESC']],
+      limit,
     });
   }
 }

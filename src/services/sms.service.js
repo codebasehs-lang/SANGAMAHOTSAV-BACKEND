@@ -25,6 +25,44 @@ const {
 class SmsService {
   async sendCampaign({ type, registrationIds, message, channel }, adminId) {
     const selectedChannel = channel || MESSAGE_CHANNEL.WHATSAPP;
+
+    if (selectedChannel === MESSAGE_CHANNEL.APPLICATION) {
+      if (!message || !message.trim()) {
+        throw ApiError.badRequest(
+          'Message is required for Application channel.'
+        );
+      }
+
+      const activeHall = await seminarHallService.getActive();
+      const campaign = await smsRepository.createCampaign({
+        type,
+        channel: selectedChannel,
+        messageTemplate: message.trim(),
+        seminarHallId: activeHall ? activeHall.id : null,
+        totalRecipients: 0,
+        sentCount: 0,
+        failedCount: 0,
+        status: SMS_CAMPAIGN_STATUS.COMPLETED,
+        triggeredBy: adminId,
+      });
+
+      logger.info('Application notice created', {
+        campaignId: campaign.id,
+        type,
+        channel: selectedChannel,
+      });
+
+      return {
+        campaignId: campaign.id,
+        type,
+        channel: selectedChannel,
+        totalRecipients: 0,
+        sentCount: 0,
+        failedCount: 0,
+        status: SMS_CAMPAIGN_STATUS.COMPLETED,
+      };
+    }
+
     let template;
     if (type === SMS_CAMPAIGN_TYPE.CUSTOM) {
       if (!message || !message.trim()) {
@@ -74,6 +112,13 @@ class SmsService {
 
     for (const registration of eligible) {
       const message = this._render(template, registration, activeHall);
+      const whatsappTemplateName = env.whatsapp.defaultTemplateName || null;
+      const whatsappComponents = whatsappTemplateName
+        ? this._buildTemplateComponents(
+            template,
+            this._getTemplateData(registration, activeHall)
+          )
+        : null;
       // eslint-disable-next-line no-await-in-loop
       if (selectedChannel === MESSAGE_CHANNEL.SMS) {
         throw ApiError.badRequest(
@@ -84,7 +129,8 @@ class SmsService {
       const result = await sendWhatsapp({
         mobileNumber: registration.mobileNumber,
         message,
-        templateName: env.whatsapp.defaultTemplateName || null,
+        ...(whatsappTemplateName ? { templateName: whatsappTemplateName } : {}),
+        ...(whatsappComponents ? { components: whatsappComponents } : {}),
       });
 
       // eslint-disable-next-line no-await-in-loop
@@ -171,12 +217,9 @@ class SmsService {
   async sendPaymentConfirmation(registration, adminId) {
     const template = TEMPLATES[SMS_CAMPAIGN_TYPE.PAYMENT_CONFIRMED];
     const devoteeName = registration.initiatedName || registration.name || '';
-    const templatePlaceholders = Array.from(
-      new Set((template.match(/\{\{\s*(\w+)\s*\}\}/g) || []).map((token) => token))
-    );
-    const renderedMessage = renderTemplate(template, {
-      name: devoteeName,
-    });
+    const templateData = { name: devoteeName };
+    const templatePlaceholders = this._getTemplateTokens(template);
+    const renderedMessage = renderTemplate(template, templateData);
 
     const campaign = await smsRepository.createCampaign({
       type: SMS_CAMPAIGN_TYPE.PAYMENT_CONFIRMED,
@@ -192,14 +235,7 @@ class SmsService {
       env.whatsapp.paymentTemplateName || env.whatsapp.defaultTemplateName || null;
 
     const templateComponents = paymentTemplateName
-      ? [
-          {
-            type: 'body',
-            parameters: [
-              { type: 'text', text: devoteeName, parameter_name: 'name' },
-            ],
-          },
-        ]
+      ? this._buildTemplateComponents(template, templateData)
       : null;
 
     logger.info('Payment confirmation WhatsApp payload prepared', {
@@ -262,8 +298,13 @@ class SmsService {
 
   /** Fills template tokens from a registration + active hall. */
   _render(template, registration, hall) {
+    return renderTemplate(template, this._getTemplateData(registration, hall));
+  }
+
+  /** Builds the token map used for rendering WhatsApp/SMS campaign templates. */
+  _getTemplateData(registration, hall) {
     const assignment = registration.assignment || {};
-    return renderTemplate(template, {
+    return {
       name: registration.initiatedName || registration.name,
       hotelName: assignment.hotelName || '',
       hotelAddress: assignment.hotelAddress || '',
@@ -272,7 +313,38 @@ class SmsService {
       hallName: hall ? hall.hallName : '',
       hallAddress: hall ? hall.hallAddress : '',
       hallMap: hall ? hall.hallMapLink : '',
-    });
+    };
+  }
+
+  /** Extracts unique placeholder token names from a template string. */
+  _getTemplateTokens(template) {
+    return Array.from(
+      new Set(
+        (template.match(/\{\{\s*(\w+)\s*\}\}/g) || []).map((token) =>
+          token.replace(/[{}\s]/g, '')
+        )
+      )
+    );
+  }
+
+  /**
+   * Builds WhatsApp template body components in the same format used by
+   * payment confirmation sends.
+   */
+  _buildTemplateComponents(template, templateData = {}) {
+    const tokens = this._getTemplateTokens(template);
+    if (tokens.length === 0) return null;
+
+    return [
+      {
+        type: 'body',
+        parameters: tokens.map((token) => ({
+          type: 'text',
+          text: templateData[token] != null ? String(templateData[token]) : '',
+          parameter_name: token,
+        })),
+      },
+    ];
   }
 
 }

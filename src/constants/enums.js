@@ -15,7 +15,7 @@ const DEVOTEE_CATEGORY = Object.freeze({
 });
 
 const NON_ATTENDING_TYPE = Object.freeze({
-  ATTENDING_NOT_STAYING: 'ATTENDING_NOT_STAYING',
+  NON_ATTENDING: 'NON_ATTENDING',
 });
 
 const SHARED_ACCOMMODATION = Object.freeze({
@@ -127,6 +127,7 @@ const SMS_LOG_STATUS = Object.freeze({
 const MESSAGE_CHANNEL = Object.freeze({
   SMS: 'SMS',
   WHATSAPP: 'WHATSAPP',
+  APPLICATION: 'APPLICATION',
 });
 
 const values = (obj) => Object.values(obj);
