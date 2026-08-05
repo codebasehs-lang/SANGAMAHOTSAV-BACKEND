@@ -71,6 +71,7 @@ const baseRules = [
     .isString()
     .isLength({ max: 150 })
     .withMessage('payeeAccountName must be at most 150 characters.'),
+  body('allowPaymentScreenshotUpdate').optional().isBoolean().toBoolean(),
   body('comments').optional({ checkFalsy: true }).isString().isLength({ max: 2000 }),
   body('familyMembers')
     .optional({ nullable: true })

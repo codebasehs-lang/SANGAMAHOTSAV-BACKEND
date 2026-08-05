@@ -40,7 +40,7 @@ class RegistrationService {
     }
 
     // Devotees who are non-attending / not staying do not need a room.
-    if (data.nonAttendingType === NON_ATTENDING_TYPE.ATTENDING_NOT_STAYING) {
+    if (data.nonAttendingType === NON_ATTENDING_TYPE.NON_ATTENDING) {
       data.accommodationStatus = ACCOMMODATION_STATUS.NOT_REQUIRED;
     } else {
       data.accommodationStatus = ACCOMMODATION_STATUS.PENDING;
