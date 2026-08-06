@@ -39,8 +39,11 @@ class RegistrationService {
       );
     }
 
-    // Devotees who are non-attending / not staying do not need a room.
-    if (data.nonAttendingType === NON_ATTENDING_TYPE.NON_ATTENDING) {
+    // Devotees who selected a no-stay contribution do not need a room.
+    if (
+      data.nonAttendingType === NON_ATTENDING_TYPE.NON_ATTENDING ||
+      data.nonAttendingType === NON_ATTENDING_TYPE.ATTENDING_NOT_STAYING
+    ) {
       data.accommodationStatus = ACCOMMODATION_STATUS.NOT_REQUIRED;
     } else {
       data.accommodationStatus = ACCOMMODATION_STATUS.PENDING;

@@ -15,6 +15,7 @@ const DEVOTEE_CATEGORY = Object.freeze({
 });
 
 const NON_ATTENDING_TYPE = Object.freeze({
+  ATTENDING_NOT_STAYING: 'ATTENDING_NOT_STAYING',
   NON_ATTENDING: 'NON_ATTENDING',
 });
 
