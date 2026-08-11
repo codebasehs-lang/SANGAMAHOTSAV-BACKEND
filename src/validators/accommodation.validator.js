@@ -59,9 +59,24 @@ const listQueryRules = [
   query('status').optional({ checkFalsy: true }).isIn(values(ASSIGNMENT_STATUS)),
 ];
 
+const availabilityUpdateRules = [
+  param('id').isInt({ min: 1 }).withMessage('Invalid availability id.'),
+  body('isOpen')
+    .optional()
+    .isBoolean()
+    .withMessage('isOpen must be true or false.')
+    .toBoolean(),
+  body('statusMessage')
+    .optional({ nullable: true })
+    .isString()
+    .isLength({ max: 255 })
+    .withMessage('statusMessage must be at most 255 characters.'),
+];
+
 module.exports = {
   assignRules,
   updateRules,
   registrationIdParam,
   listQueryRules,
+  availabilityUpdateRules,
 };

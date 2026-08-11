@@ -1,4 +1,5 @@
 const registrationRepository = require('../repositories/registration.repository');
+const accommodationService = require('./accommodation.service');
 const excelService = require('./excel.service');
 const smsService = require('./sms.service');
 const ApiError = require('../utils/ApiError');
@@ -26,6 +27,20 @@ class RegistrationService {
   /** Public: create a new registration. */
   async create(payload) {
     const data = { ...payload };
+
+    const selectedAccommodation =
+      data.sharedAccommodation || data.familyAccommodation || null;
+    const selectedAccommodationField = data.sharedAccommodation
+      ? 'sharedAccommodation'
+      : data.familyAccommodation
+        ? 'familyAccommodation'
+        : null;
+
+    await accommodationService.ensureSelectionAllowed({
+      accommodationType: selectedAccommodation,
+      gender: data.gender,
+      fieldName: selectedAccommodationField,
+    });
 
     // Enforce unique mobile with a friendly message (DB unique index
     // is the ultimate safeguard against race conditions).

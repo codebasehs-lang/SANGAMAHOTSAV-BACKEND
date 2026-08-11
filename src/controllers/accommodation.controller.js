@@ -7,6 +7,16 @@ const messages = require('../constants/messages');
  * HTTP layer for hotel & room assignment.
  */
 class AccommodationController {
+  listAvailability = asyncHandler(async (req, res) => {
+    const rows = await accommodationService.listAvailability();
+    return ApiResponse.send(res, { data: rows, message: messages.FETCHED });
+  });
+
+  updateAvailability = asyncHandler(async (req, res) => {
+    const row = await accommodationService.updateAvailability(req.params.id, req.body);
+    return ApiResponse.send(res, { data: row, message: messages.UPDATED });
+  });
+
   assign = asyncHandler(async (req, res) => {
     const assignment = await accommodationService.assign(
       req.params.registrationId,

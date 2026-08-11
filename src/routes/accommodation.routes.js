@@ -7,14 +7,24 @@ const {
   updateRules,
   registrationIdParam,
   listQueryRules,
+  availabilityUpdateRules,
 } = require('../validators/accommodation.validator');
 
 const router = Router();
+
+router.get('/availability/public', accommodationController.listAvailability);
 
 // All accommodation routes are admin-only
 router.use(authGuard, requireAdmin);
 
 router.get('/', validate(listQueryRules), accommodationController.list);
+router.get('/availability', accommodationController.listAvailability);
+router.put(
+  '/availability/:id',
+  requireEditor,
+  validate(availabilityUpdateRules),
+  accommodationController.updateAvailability
+);
 
 // Assign (create or upsert) accommodation for a registration
 router.post(
