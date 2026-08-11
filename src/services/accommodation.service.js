@@ -1,5 +1,6 @@
 const { sequelize } = require('../models');
 const accommodationRepository = require('../repositories/accommodation.repository');
+const accommodationAvailabilityRepository = require('../repositories/accommodationAvailability.repository');
 const registrationRepository = require('../repositories/registration.repository');
 const { getPagination, buildMeta } = require('../utils/pagination');
 const ApiError = require('../utils/ApiError');
@@ -7,7 +8,36 @@ const {
   ASSIGNMENT_STATUS,
   ACCOMMODATION_STATUS,
   PAYMENT_STATUS,
+  SHARED_ACCOMMODATION,
+  FAMILY_ACCOMMODATION,
+  ACCOMMODATION_AVAILABILITY_GENDER,
+  values,
 } = require('../constants/enums');
+
+const DEFAULT_AVAILABILITY_ROWS = [
+  {
+    accommodationType: SHARED_ACCOMMODATION.DORMITORY,
+    gender: ACCOMMODATION_AVAILABILITY_GENDER.MALE,
+  },
+  {
+    accommodationType: SHARED_ACCOMMODATION.DORMITORY,
+    gender: ACCOMMODATION_AVAILABILITY_GENDER.FEMALE,
+  },
+  ...values(SHARED_ACCOMMODATION)
+    .filter((type) => type !== SHARED_ACCOMMODATION.DORMITORY)
+    .map((accommodationType) => ({
+      accommodationType,
+      gender: ACCOMMODATION_AVAILABILITY_GENDER.ALL,
+    })),
+  ...values(FAMILY_ACCOMMODATION).map((accommodationType) => ({
+    accommodationType,
+    gender: ACCOMMODATION_AVAILABILITY_GENDER.ALL,
+  })),
+].map((row) => ({
+  ...row,
+  isOpen: true,
+  statusMessage: null,
+}));
 
 /**
  * Business logic for hotel & room assignment. Each registration has
@@ -15,6 +45,40 @@ const {
  * accommodation_status in sync within a transaction.
  */
 class AccommodationService {
+  async listAvailability() {
+    await this._ensureDefaultAvailability();
+    return accommodationAvailabilityRepository.findAll();
+  }
+
+  async updateAvailability(id, payload) {
+    await this._ensureDefaultAvailability();
+    const availability = await accommodationAvailabilityRepository.findById(id);
+    if (!availability) {
+      throw ApiError.notFound('Accommodation availability setting not found.');
+    }
+
+    return accommodationAvailabilityRepository.updateInstance(availability, payload);
+  }
+
+  async ensureSelectionAllowed({ accommodationType, gender, fieldName }) {
+    if (!accommodationType) return;
+
+    const availability = await this._getAvailabilityForSelection({
+      accommodationType,
+      gender,
+    });
+
+    if (!availability || availability.isOpen) return;
+
+    const message =
+      availability.statusMessage ||
+      'This accommodation option is no longer available. Please choose another option.';
+
+    throw ApiError.conflict(message, [
+      { field: fieldName || 'accommodation', message },
+    ]);
+  }
+
   /**
    * Assign (or re-assign) accommodation to a registration.
    * Creates the assignment if absent, otherwise updates it.
@@ -134,6 +198,36 @@ class AccommodationService {
     });
 
     return { data: rows, meta: buildMeta({ count, page, limit }) };
+  }
+
+  async _ensureDefaultAvailability() {
+    const rows = await accommodationAvailabilityRepository.findAll();
+    const existingKeys = new Set(
+      rows.map((row) => `${row.accommodationType}:${row.gender}`)
+    );
+    const missingRows = DEFAULT_AVAILABILITY_ROWS.filter(
+      (row) => !existingKeys.has(`${row.accommodationType}:${row.gender}`)
+    );
+
+    if (missingRows.length > 0) {
+      await accommodationAvailabilityRepository.bulkCreate(missingRows, {
+        ignoreDuplicates: true,
+      });
+    }
+  }
+
+  async _getAvailabilityForSelection({ accommodationType, gender }) {
+    await this._ensureDefaultAvailability();
+
+    const scope =
+      accommodationType === SHARED_ACCOMMODATION.DORMITORY
+        ? gender || ACCOMMODATION_AVAILABILITY_GENDER.ALL
+        : ACCOMMODATION_AVAILABILITY_GENDER.ALL;
+
+    return accommodationAvailabilityRepository.findOne({
+      accommodationType,
+      gender: scope,
+    });
   }
 }
 

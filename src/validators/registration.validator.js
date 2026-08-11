@@ -167,6 +167,16 @@ const createRegistrationRules = [
     .notEmpty()
     .withMessage('Coming from is required.')
     .isLength({ max: 150 }),
+  body('paymentScreenshot').custom((_, { req }) => {
+    if (req.body.devoteeCategory === DEVOTEE_CATEGORY.BRAHMACHARI) {
+      return true;
+    }
+    if (req.file) {
+      return true;
+    }
+
+    throw new Error('Payment screenshot is required for this registration category.');
+  }),
   ...baseRules,
 ];
 
