@@ -1,4 +1,4 @@
-const { AccommodationAssignment, Registration } = require('../models');
+const { AccommodationAssignment, Registration, HotelRoom } = require('../models');
 const { ASSIGNMENT_STATUS } = require('../constants/enums');
 
 /**
@@ -8,13 +8,17 @@ class AccommodationRepository {
   findByRegistrationId(registrationId, options = {}) {
     return AccommodationAssignment.findOne({
       where: { registration_id: registrationId },
+      include: [{ model: HotelRoom, as: 'hotelRoom', required: false }],
       ...options,
     });
   }
 
   findById(id, options = {}) {
     return AccommodationAssignment.findByPk(id, {
-      include: [{ model: Registration, as: 'registration' }],
+      include: [
+        { model: Registration, as: 'registration' },
+        { model: HotelRoom, as: 'hotelRoom', required: false },
+      ],
       ...options,
     });
   }
@@ -33,7 +37,10 @@ class AccommodationRepository {
       limit,
       offset,
       order,
-      include: [{ model: Registration, as: 'registration' }],
+      include: [
+        { model: Registration, as: 'registration' },
+        { model: HotelRoom, as: 'hotelRoom', required: false },
+      ],
       distinct: true,
     });
   }
