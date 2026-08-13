@@ -14,6 +14,11 @@ module.exports = (sequelize) => {
         as: 'assigner',
         onDelete: 'SET NULL',
       });
+      AccommodationAssignment.belongsTo(models.HotelRoom, {
+        foreignKey: 'hotelRoomId',
+        as: 'hotelRoom',
+        onDelete: 'SET NULL',
+      });
     }
   }
 
@@ -32,6 +37,16 @@ module.exports = (sequelize) => {
       hotelName: { type: DataTypes.STRING(150), allowNull: false },
       hotelAddress: { type: DataTypes.STRING(255), allowNull: false },
       roomNumber: { type: DataTypes.STRING(30), allowNull: false },
+      hotelRoomId: {
+        type: DataTypes.BIGINT.UNSIGNED,
+        allowNull: true,
+      },
+      assignedOccupancy: {
+        type: DataTypes.INTEGER.UNSIGNED,
+        allowNull: false,
+        defaultValue: 1,
+        validate: { min: 1 },
+      },
       hotelMapLink: {
         type: DataTypes.STRING(500),
         allowNull: true,
@@ -61,6 +76,7 @@ module.exports = (sequelize) => {
       indexes: [
         { unique: true, fields: ['registration_id'] },
         { fields: ['status'] },
+        { fields: ['hotel_room_id'] },
       ],
     }
   );

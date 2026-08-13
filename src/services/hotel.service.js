@@ -1,4 +1,5 @@
 const hotelRepository = require('../repositories/hotel.repository');
+const hotelRoomRepository = require('../repositories/hotelRoom.repository');
 const ApiError = require('../utils/ApiError');
 
 /**
@@ -28,6 +29,31 @@ class HotelService {
   async remove(id) {
     await this.getById(id);
     await hotelRepository.destroy(id);
+    return true;
+  }
+
+  async createRoom(hotelId, payload) {
+    await this.getById(hotelId);
+    return hotelRoomRepository.create({ ...payload, hotelId });
+  }
+
+  async updateRoom(hotelId, roomId, payload) {
+    await this.getById(hotelId);
+    const room = await this.getRoomById(hotelId, roomId);
+    return hotelRoomRepository.updateInstance(room, payload);
+  }
+
+  async getRoomById(hotelId, roomId) {
+    const room = await hotelRoomRepository.findById(roomId);
+    if (!room || String(room.hotelId) !== String(hotelId)) {
+      throw ApiError.notFound('Hotel room not found.');
+    }
+    return room;
+  }
+
+  async removeRoom(hotelId, roomId) {
+    await this.getRoomById(hotelId, roomId);
+    await hotelRoomRepository.destroy(roomId);
     return true;
   }
 }

@@ -34,6 +34,12 @@ class DashboardRepository {
     });
   }
 
+  brahmachariRegistrations() {
+    return Registration.count({
+      where: { devotee_category: DEVOTEE_CATEGORY.BRAHMACHARI },
+    });
+  }
+
   /** Devotees who need a room (anything not explicitly NOT_REQUIRED). */
   devoteesRequiringStay() {
     return Registration.count({

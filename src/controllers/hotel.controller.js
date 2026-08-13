@@ -31,6 +31,28 @@ class HotelController {
     await hotelService.remove(req.params.id);
     return ApiResponse.send(res, { message: messages.DELETED });
   });
+
+  createRoom = asyncHandler(async (req, res) => {
+    const room = await hotelService.createRoom(req.params.id, req.body);
+    return ApiResponse.created(res, {
+      data: room,
+      message: 'Hotel room created successfully.',
+    });
+  });
+
+  updateRoom = asyncHandler(async (req, res) => {
+    const room = await hotelService.updateRoom(
+      req.params.id,
+      req.params.roomId,
+      req.body
+    );
+    return ApiResponse.send(res, { data: room, message: messages.UPDATED });
+  });
+
+  removeRoom = asyncHandler(async (req, res) => {
+    await hotelService.removeRoom(req.params.id, req.params.roomId);
+    return ApiResponse.send(res, { message: messages.DELETED });
+  });
 }
 
 module.exports = new HotelController();

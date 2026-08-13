@@ -2,6 +2,14 @@ const { body, param, query } = require('express-validator');
 const { ASSIGNMENT_STATUS, values } = require('../constants/enums');
 
 const assignmentBody = [
+  body('assignedOccupancy')
+    .optional({ nullable: true, checkFalsy: true })
+    .isInt({ min: 1 })
+    .withMessage('assignedOccupancy must be at least 1.'),
+  body('hotelRoomId')
+    .optional({ nullable: true, checkFalsy: true })
+    .isInt({ min: 1 })
+    .withMessage('hotelRoomId must be a valid room id.'),
   body('hotelName')
     .trim()
     .notEmpty()
@@ -44,6 +52,8 @@ const updateRules = [
     .optional({ nullable: true, checkFalsy: true })
     .isURL()
     .isLength({ max: 500 }),
+  body('assignedOccupancy').optional().isInt({ min: 1 }),
+  body('hotelRoomId').optional({ nullable: true, checkFalsy: true }).isInt({ min: 1 }),
   body('status').optional().isIn(values(ASSIGNMENT_STATUS)),
 ];
 
