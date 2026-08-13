@@ -1,4 +1,5 @@
 const dashboardRepository = require('../repositories/dashboard.repository');
+const { DEVOTEE_CATEGORY } = require('../constants/enums');
 
 /**
  * Assembles the dashboard summary. Counts run in parallel since
@@ -8,9 +9,7 @@ class DashboardService {
   async getSummary() {
     const [
       totalRegistrations,
-      discipleRegistrations,
-      nonDiscipleRegistrations,
-      brahmachariRegistrations,
+      categoryBreakdown,
       devoteesRequiringStay,
       assignedRooms,
       pendingAssignments,
@@ -21,9 +20,7 @@ class DashboardService {
       attendeeCounts,
     ] = await Promise.all([
       dashboardRepository.totalRegistrations(),
-      dashboardRepository.discipleRegistrations(),
-      dashboardRepository.nonDiscipleRegistrations(),
-      dashboardRepository.brahmachariRegistrations(),
+      dashboardRepository.categoryBreakdown(),
       dashboardRepository.devoteesRequiringStay(),
       dashboardRepository.assignedRooms(),
       dashboardRepository.pendingAssignments(),
@@ -36,9 +33,9 @@ class DashboardService {
 
     return {
       totalRegistrations,
-      discipleRegistrations,
-      nonDiscipleRegistrations,
-      brahmachariRegistrations,
+      discipleRegistrations: categoryBreakdown[DEVOTEE_CATEGORY.DISCIPLE] ?? 0,
+      nonDiscipleRegistrations: categoryBreakdown[DEVOTEE_CATEGORY.NON_DISCIPLE] ?? 0,
+      brahmachariRegistrations: categoryBreakdown[DEVOTEE_CATEGORY.BRAHMACHARI] ?? 0,
       devoteesRequiringStay,
       assignedRooms,
       pendingAssignments,
@@ -49,6 +46,8 @@ class DashboardService {
       totalAttendees: attendeeCounts.totalAttendees,
       totalAdults: attendeeCounts.totalAdults,
       totalChildren: attendeeCounts.totalChildren,
+      maleCount: attendeeCounts.maleCount,
+      femaleCount: attendeeCounts.femaleCount,
     };
   }
 }
