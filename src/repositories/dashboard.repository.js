@@ -22,22 +22,78 @@ class DashboardRepository {
     return Registration.count();
   }
 
-  discipleRegistrations() {
-    return Registration.count({
-      where: { devotee_category: DEVOTEE_CATEGORY.DISCIPLE },
+  async categoryBreakdown() {
+    const rows = await Registration.findAll({
+      attributes: ['devoteeCategory', 'gender', 'familyMembers'],
+      raw: true,
     });
+
+    const counts = {
+      [DEVOTEE_CATEGORY.DISCIPLE]: 0,
+      [DEVOTEE_CATEGORY.NON_DISCIPLE]: 0,
+      [DEVOTEE_CATEGORY.BRAHMACHARI]: 0,
+    };
+
+    for (const row of rows) {
+      const mainCategory = row.devoteeCategory;
+      const familyMembers = Array.isArray(row.familyMembers) ? row.familyMembers : [];
+
+      if (mainCategory && counts[mainCategory] !== undefined) {
+        counts[mainCategory] += 1;
+      }
+
+      for (const member of familyMembers) {
+        const memberCategory = member?.devoteeCategory || mainCategory;
+
+        if (memberCategory && counts[memberCategory] !== undefined) {
+          counts[memberCategory] += 1;
+        }
+      }
+    }
+
+    return counts;
   }
 
-  nonDiscipleRegistrations() {
-    return Registration.count({
-      where: { devotee_category: DEVOTEE_CATEGORY.NON_DISCIPLE },
+  async attendeeCounts() {
+    const rows = await Registration.findAll({
+      attributes: ['age', 'gender', 'familyMembers'],
+      raw: true,
     });
-  }
 
-  brahmachariRegistrations() {
-    return Registration.count({
-      where: { devotee_category: DEVOTEE_CATEGORY.BRAHMACHARI },
-    });
+    let totalAttendees = 0;
+    let totalAdults = 0;
+    let totalChildren = 0;
+    let maleCount = 0;
+    let femaleCount = 0;
+
+    const addPerson = (age, gender) => {
+      const numericAge = Number(age) || 0;
+      totalAttendees += 1;
+      if (numericAge >= 18) totalAdults += 1;
+      else totalChildren += 1;
+
+      const normalizedGender = String(gender || '').trim().toUpperCase();
+      if (normalizedGender === 'MALE') maleCount += 1;
+      else if (normalizedGender === 'FEMALE') femaleCount += 1;
+    };
+
+    for (const row of rows) {
+      addPerson(row.age, row.gender);
+
+      const familyMembers = Array.isArray(row.familyMembers) ? row.familyMembers : [];
+      for (const member of familyMembers) {
+        if (!member || typeof member !== 'object') continue;
+        addPerson(member.age, member.gender || row.gender);
+      }
+    }
+
+    return {
+      totalAttendees,
+      totalAdults,
+      totalChildren,
+      maleCount,
+      femaleCount,
+    };
   }
 
   /** Devotees who need a room (anything not explicitly NOT_REQUIRED). */
@@ -85,38 +141,6 @@ class DashboardRepository {
     return Feedback.count();
   }
 
-  /** Returns { totalAttendees, totalAdults, totalChildren } across all registrations + their family members. */
-  async attendeeCounts() {
-    const rows = await Registration.findAll({
-      attributes: ['age', 'familyMembers'],
-      raw: true,
-    });
-
-    let totalAttendees = 0;
-    let totalAdults = 0;
-    let totalChildren = 0;
-
-    for (const r of rows) {
-      const mainAge = Number(r.age) || 0;
-      const members = Array.isArray(r.familyMembers) ? r.familyMembers : [];
-
-      // Main registrant
-      totalAttendees += 1;
-      if (mainAge >= 18) totalAdults += 1;
-      else totalChildren += 1;
-
-      // Family members
-      for (const m of members) {
-        if (!m.name) continue;
-        const age = Number(m.age) || 0;
-        totalAttendees += 1;
-        if (age >= 18) totalAdults += 1;
-        else totalChildren += 1;
-      }
-    }
-
-    return { totalAttendees, totalAdults, totalChildren };
-  }
 }
 
 module.exports = new DashboardRepository();
