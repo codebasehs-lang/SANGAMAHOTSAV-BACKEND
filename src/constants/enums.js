@@ -11,7 +11,15 @@ const ADMIN_ROLE = Object.freeze({
 const DEVOTEE_CATEGORY = Object.freeze({
   DISCIPLE: 'DISCIPLE',
   NON_DISCIPLE: 'NON_DISCIPLE',
+  BRAHMACHARI: 'BRAHMACHARI', // kept for existing DB data; no longer shown in dropdown
+  ASPIRING: 'ASPIRING',
+  FOLLOWER: 'FOLLOWER',
+});
+
+const DEVOTEE_ASHRAM = Object.freeze({
+  GRIHASTHA: 'GRIHASTHA',
   BRAHMACHARI: 'BRAHMACHARI',
+  ASPIRING: 'ASPIRING',
 });
 
 const NON_ATTENDING_TYPE = Object.freeze({
@@ -150,6 +158,7 @@ const values = (obj) => Object.values(obj);
 module.exports = {
   ADMIN_ROLE,
   DEVOTEE_CATEGORY,
+  DEVOTEE_ASHRAM,
   NON_ATTENDING_TYPE,
   SHARED_ACCOMMODATION,
   FAMILY_ACCOMMODATION,

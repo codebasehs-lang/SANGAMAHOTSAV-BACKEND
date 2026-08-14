@@ -1,6 +1,7 @@
 const { Model, DataTypes } = require('sequelize');
 const {
   DEVOTEE_CATEGORY,
+  DEVOTEE_ASHRAM,
   NON_ATTENDING_TYPE,
   SHARED_ACCOMMODATION,
   FAMILY_ACCOMMODATION,
@@ -46,6 +47,10 @@ module.exports = (sequelize) => {
         type: DataTypes.ENUM(...values(DEVOTEE_CATEGORY)),
         allowNull: false,
       },
+      devoteeAshram: {
+        type: DataTypes.ENUM(...values(DEVOTEE_ASHRAM)),
+        allowNull: true,
+      },
       // Field 3 — array of { name, age }
       familyMembers: { type: DataTypes.JSON, allowNull: true },
       // Field 4
@@ -54,12 +59,16 @@ module.exports = (sequelize) => {
         allowNull: false,
         unique: true,
       },
+      email: { type: DataTypes.STRING(254), allowNull: true },
       passwordHash: {
         type: DataTypes.STRING(255),
         allowNull: true,
       },
       // Field 5
       comingFrom: { type: DataTypes.STRING(150), allowNull: false },
+      country: { type: DataTypes.STRING(100), allowNull: true },
+      state: { type: DataTypes.STRING(100), allowNull: true },
+      district: { type: DataTypes.STRING(150), allowNull: true },
       facilitatorName: { type: DataTypes.STRING(150), allowNull: true },
       gender: {
         type: DataTypes.ENUM('MALE', 'FEMALE'),

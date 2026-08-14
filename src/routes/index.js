@@ -29,5 +29,6 @@ router.use('/sms', require('./sms.routes'));
 router.use('/feedbacks', require('./feedback.routes'));
 router.use('/dashboard', require('./dashboard.routes'));
 router.use('/donations', require('./donation.routes'));
+router.use('/seva', require('./seva.routes'));
 
 module.exports = router;

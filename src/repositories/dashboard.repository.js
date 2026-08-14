@@ -11,7 +11,7 @@ const {
   SMS_LOG_STATUS,
   PAYMENT_STATUS,
   DEVOTEE_CATEGORY,
-} = require('../constants/enums');
+} = require('../constants/enums'); // BRAHMACHARI kept in enum for existing data
 
 /**
  * Aggregate counts for the admin dashboard cards.
@@ -32,6 +32,8 @@ class DashboardRepository {
       [DEVOTEE_CATEGORY.DISCIPLE]: 0,
       [DEVOTEE_CATEGORY.NON_DISCIPLE]: 0,
       [DEVOTEE_CATEGORY.BRAHMACHARI]: 0,
+      [DEVOTEE_CATEGORY.ASPIRING]: 0,
+      [DEVOTEE_CATEGORY.FOLLOWER]: 0,
     };
 
     for (const row of rows) {
@@ -82,8 +84,8 @@ class DashboardRepository {
 
       const familyMembers = Array.isArray(row.familyMembers) ? row.familyMembers : [];
       for (const member of familyMembers) {
-        if (!member || typeof member !== 'object') continue;
-        addPerson(member.age, member.gender || row.gender);
+        if (!member || !member.name) continue; // skip empty slots
+        addPerson(member.age, member.gender); // use member's own gender only
       }
     }
 
@@ -135,6 +137,14 @@ class DashboardRepository {
 
   smsSent() {
     return SmsLog.count({ where: { status: SMS_LOG_STATUS.SENT } });
+  }
+
+  nonAttendingCount() {
+    return Registration.count({ where: { non_attending_type: 'NON_ATTENDING' } });
+  }
+
+  attendingNotStayingCount() {
+    return Registration.count({ where: { non_attending_type: 'ATTENDING_NOT_STAYING' } });
   }
 
   feedbackReceived() {

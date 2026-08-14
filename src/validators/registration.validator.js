@@ -1,6 +1,7 @@
 const { body, param, query } = require('express-validator');
 const {
   DEVOTEE_CATEGORY,
+  DEVOTEE_ASHRAM,
   NON_ATTENDING_TYPE,
   SHARED_ACCOMMODATION,
   FAMILY_ACCOMMODATION,
@@ -36,6 +37,30 @@ const baseRules = [
     .optional({ checkFalsy: true })
     .isIn(['MALE', 'FEMALE'])
     .withMessage('gender must be MALE or FEMALE.'),
+  body('devoteeAshram')
+    .optional({ checkFalsy: true })
+    .isIn(values(DEVOTEE_ASHRAM))
+    .withMessage('devoteeAshram is invalid.'),
+  body('email')
+    .optional({ checkFalsy: true })
+    .isEmail()
+    .withMessage('email must be a valid email address.')
+    .isLength({ max: 254 }),
+  body('country')
+    .optional({ checkFalsy: true })
+    .isString()
+    .isLength({ max: 100 })
+    .withMessage('country must be at most 100 characters.'),
+  body('state')
+    .optional({ checkFalsy: true })
+    .isString()
+    .isLength({ max: 100 })
+    .withMessage('state must be at most 100 characters.'),
+  body('district')
+    .optional({ checkFalsy: true })
+    .isString()
+    .isLength({ max: 150 })
+    .withMessage('district must be at most 150 characters.'),
   optionalEnum('nonAttendingType', NON_ATTENDING_TYPE),
   optionalEnum('sharedAccommodation', SHARED_ACCOMMODATION),
   optionalEnum('familyAccommodation', FAMILY_ACCOMMODATION),
@@ -145,7 +170,10 @@ const createRegistrationRules = [
     .trim()
     .notEmpty()
     .withMessage('Name is required.')
-    .isLength({ max: 150 }),
+    .isLength({ max: 150 })
+    .withMessage('Name must be at most 150 characters.')
+    .matches(/^[a-zA-Z .'`-]+$/)
+    .withMessage('Name can only contain letters, spaces, dots, hyphens and apostrophes.'),
   body('age')
     .notEmpty()
     .withMessage('Age is required.')
@@ -167,8 +195,30 @@ const createRegistrationRules = [
     .notEmpty()
     .withMessage('Coming from is required.')
     .isLength({ max: 150 }),
+  body('email')
+    .trim()
+    .notEmpty()
+    .withMessage('Email ID is required.')
+    .isEmail()
+    .withMessage('Email ID must be a valid email address.')
+    .isLength({ max: 254 }),
+  body('country')
+    .trim()
+    .notEmpty()
+    .withMessage('Country is required.')
+    .isLength({ max: 100 }),
+  body('state')
+    .trim()
+    .notEmpty()
+    .withMessage('State is required.')
+    .isLength({ max: 100 }),
+  body('district')
+    .trim()
+    .notEmpty()
+    .withMessage('District is required.')
+    .isLength({ max: 150 }),
   body('paymentScreenshot').custom((_, { req }) => {
-    if (req.body.devoteeCategory === DEVOTEE_CATEGORY.BRAHMACHARI) {
+    if (req.body.devoteeAshram === 'BRAHMACHARI') {
       return true;
     }
     if (req.file) {
