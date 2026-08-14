@@ -18,6 +18,8 @@ class DashboardService {
       smsSent,
       feedbackReceived,
       attendeeCounts,
+      nonAttendingCount,
+      attendingNotStayingCount,
     ] = await Promise.all([
       dashboardRepository.totalRegistrations(),
       dashboardRepository.categoryBreakdown(),
@@ -29,6 +31,8 @@ class DashboardService {
       dashboardRepository.smsSent(),
       dashboardRepository.feedbackReceived(),
       dashboardRepository.attendeeCounts(),
+      dashboardRepository.nonAttendingCount(),
+      dashboardRepository.attendingNotStayingCount(),
     ]);
 
     return {
@@ -36,6 +40,10 @@ class DashboardService {
       discipleRegistrations: categoryBreakdown[DEVOTEE_CATEGORY.DISCIPLE] ?? 0,
       nonDiscipleRegistrations: categoryBreakdown[DEVOTEE_CATEGORY.NON_DISCIPLE] ?? 0,
       brahmachariRegistrations: categoryBreakdown[DEVOTEE_CATEGORY.BRAHMACHARI] ?? 0,
+      aspiringRegistrations: categoryBreakdown[DEVOTEE_CATEGORY.ASPIRING] ?? 0,
+      followerRegistrations: categoryBreakdown[DEVOTEE_CATEGORY.FOLLOWER] ?? 0,
+      nonAttendingCount,
+      attendingNotStayingCount,
       devoteesRequiringStay,
       assignedRooms,
       pendingAssignments,
