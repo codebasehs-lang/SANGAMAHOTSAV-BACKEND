@@ -5,6 +5,7 @@ const password = require('../utils/password');
 const jwt = require('../utils/jwt');
 const ApiError = require('../utils/ApiError');
 const messages = require('../constants/messages');
+const crypto = require('crypto');
 
 class RegistrantAuthService {
   async _verifyPassword(registration, plainPassword) {
@@ -86,6 +87,26 @@ class RegistrantAuthService {
     return { profilePhoto: profilePhotoPath };
   }
 
+  async updateFamilyMemberRelationship(registrationId, memberIndex, relationship) {
+    const registration = await registrationRepository.findById(registrationId);
+    if (!registration) {
+      throw ApiError.notFound(messages.NOT_FOUND);
+    }
+
+    const familyMembers = Array.isArray(registration.familyMembers)
+      ? registration.familyMembers.map((member) => ({ ...member }))
+      : [];
+
+    if (!Number.isInteger(memberIndex) || memberIndex < 0 || memberIndex >= familyMembers.length) {
+      throw ApiError.badRequest('Family member was not found.');
+    }
+
+    familyMembers[memberIndex].relationship = relationship;
+    await registrationRepository.update(registrationId, { familyMembers });
+
+    return { familyMembers };
+  }
+
   async updatePaymentScreenshot(registrationId, paymentScreenshotPath, installmentNumber = 1) {
     const registration = await registrationRepository.findById(registrationId);
     if (!registration) {
@@ -120,6 +141,10 @@ class RegistrantAuthService {
 
     const noticeBoardMessages = await smsRepository.findNoticeBoardMessages({ limit: 5 });
     const activeSeminarHall = await seminarHallService.getActive();
+    if (!registration.checkinToken) {
+      registration.checkinToken = crypto.randomBytes(24).toString('hex');
+      await registrationRepository.update(registrationId, { checkinToken: registration.checkinToken });
+    }
 
     return {
       id: registration.id,
@@ -128,6 +153,12 @@ class RegistrantAuthService {
       age: registration.age,
       devoteeCategory: registration.devoteeCategory,
       familyMembers: registration.familyMembers || [],
+      checkinToken: registration.checkinToken,
+      attendanceStatus: registration.attendanceStatus,
+      checkedInAt: registration.checkedInAt,
+      checkedOutAt: registration.checkedOutAt,
+      hotelKeyGiven: registration.hotelKeyGiven,
+      hotelKeyReturned: registration.hotelKeyReturned,
       mobileNumber: registration.mobileNumber,
       comingFrom: registration.comingFrom,
       facilitatorName: registration.facilitatorName,

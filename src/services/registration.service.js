@@ -6,6 +6,7 @@ const ApiError = require('../utils/ApiError');
 const logger = require('../utils/logger');
 const messages = require('../constants/messages');
 const password = require('../utils/password');
+const crypto = require('crypto');
 const { getPagination, buildMeta } = require('../utils/pagination');
 const { ACCOMMODATION_STATUS, NON_ATTENDING_TYPE, PAYMENT_STATUS } = require('../constants/enums');
 
@@ -27,6 +28,7 @@ class RegistrationService {
   /** Public: create a new registration. */
   async create(payload) {
     const data = { ...payload };
+    data.checkinToken = crypto.randomBytes(24).toString('hex');
 
     const selectedAccommodation =
       data.sharedAccommodation || data.familyAccommodation || null;
@@ -69,6 +71,65 @@ class RegistrationService {
     }
 
     return registrationRepository.create(data);
+  }
+
+  async lookupAttendance({ token, search, status }) {
+    if (token) {
+      const registration = await registrationRepository.findByCheckinToken(token.trim());
+      if (!registration) throw ApiError.notFound('Registration QR code was not found.');
+      return [registration];
+    }
+    return registrationRepository.searchForAttendance(search?.trim(), status);
+  }
+
+  async updateAttendance(id, { action, memberIndexes = [] }, adminId) {
+    const registration = await this.getById(id);
+    const selectedIndexes = [...new Set((Array.isArray(memberIndexes) ? memberIndexes : []).map(Number))];
+    const familyMembers = Array.isArray(registration.familyMembers)
+      ? registration.familyMembers.map((member) => ({ ...member }))
+      : [];
+
+    if (selectedIndexes.some((index) => !Number.isInteger(index) || index < 0 || index >= familyMembers.length)) {
+      throw ApiError.badRequest('One or more family members were not found.');
+    }
+
+    const now = new Date();
+    const update = { familyMembers };
+
+    if (action === 'CHECK_IN') {
+      update.attendanceStatus = familyMembers.length && selectedIndexes.length < familyMembers.length
+        ? 'PARTIALLY_ARRIVED'
+        : 'CHECKED_IN';
+      update.checkedInAt = registration.checkedInAt || now;
+      update.checkedInBy = registration.checkedInBy || adminId;
+      selectedIndexes.forEach((index) => {
+        familyMembers[index].checkedIn = true;
+        familyMembers[index].checkedInAt = now;
+        familyMembers[index].checkedInBy = adminId;
+      });
+    } else if (action === 'GIVE_KEY') {
+      update.hotelKeyGiven = true;
+      update.hotelKeyGivenAt = now;
+      update.hotelKeyGivenBy = adminId;
+    } else if (action === 'RETURN_KEY') {
+      update.hotelKeyReturned = true;
+      update.hotelKeyReturnedAt = now;
+      update.hotelKeyReturnedBy = adminId;
+    } else if (action === 'CHECK_OUT') {
+      update.attendanceStatus = 'CHECKED_OUT';
+      update.checkedOutAt = now;
+      update.checkedOutBy = adminId;
+      selectedIndexes.forEach((index) => {
+        familyMembers[index].checkedOut = true;
+        familyMembers[index].checkedOutAt = now;
+        familyMembers[index].checkedOutBy = adminId;
+      });
+    } else {
+      throw ApiError.badRequest('Unsupported attendance action.');
+    }
+
+    await registrationRepository.update(id, update);
+    return this.getById(id);
   }
 
   /** Admin: paginated, searchable, filterable list. */

@@ -45,6 +45,39 @@ class RegistrantAuthController {
     });
   });
 
+  updateFamilyMemberRelationship = asyncHandler(async (req, res) => {
+    const memberIndex = Number(req.body.memberIndex);
+    const relationship = `${req.body.relationship || ''}`.trim();
+    const allowedRelationships = new Set([
+      'Spouse',
+      'Father',
+      'Mother',
+      'Son',
+      'Daughter',
+      'Brother',
+      'Sister',
+      'Friend',
+      'God Brother',
+      'God Sister',
+      'Relative',
+      'Other',
+    ]);
+
+    if (!Number.isInteger(memberIndex) || !allowedRelationships.has(relationship)) {
+      throw ApiError.badRequest('Please select a valid family member relationship.');
+    }
+
+    const result = await authService.updateFamilyMemberRelationship(
+      req.user.sub,
+      memberIndex,
+      relationship
+    );
+    return ApiResponse.send(res, {
+      data: result,
+      message: 'Family member relationship updated successfully.',
+    });
+  });
+
   updatePaymentScreenshot = asyncHandler(async (req, res) => {
     // Determine which installment screenshot is being uploaded
     let installmentNumber = 1;

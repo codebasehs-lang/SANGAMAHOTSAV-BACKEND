@@ -53,6 +53,22 @@ module.exports = (sequelize) => {
       },
       // Field 3 — array of { name, age }
       familyMembers: { type: DataTypes.JSON, allowNull: true },
+      checkinToken: { type: DataTypes.STRING(64), allowNull: true, unique: true },
+      attendanceStatus: {
+        type: DataTypes.STRING(30),
+        allowNull: false,
+        defaultValue: 'NOT_ARRIVED',
+      },
+      checkedInAt: { type: DataTypes.DATE, allowNull: true },
+      checkedInBy: { type: DataTypes.BIGINT.UNSIGNED, allowNull: true },
+      checkedOutAt: { type: DataTypes.DATE, allowNull: true },
+      checkedOutBy: { type: DataTypes.BIGINT.UNSIGNED, allowNull: true },
+      hotelKeyGiven: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+      hotelKeyGivenAt: { type: DataTypes.DATE, allowNull: true },
+      hotelKeyGivenBy: { type: DataTypes.BIGINT.UNSIGNED, allowNull: true },
+      hotelKeyReturned: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+      hotelKeyReturnedAt: { type: DataTypes.DATE, allowNull: true },
+      hotelKeyReturnedBy: { type: DataTypes.BIGINT.UNSIGNED, allowNull: true },
       // Field 4
       mobileNumber: {
         type: DataTypes.STRING(15),

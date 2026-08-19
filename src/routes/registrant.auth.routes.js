@@ -18,6 +18,11 @@ router.put(
 	registrantAuthController.updateProfilePhoto
 );
 router.put(
+	'/family-member-relationship',
+	authGuard,
+	registrantAuthController.updateFamilyMemberRelationship
+);
+router.put(
 	'/payment-screenshot',
 	authGuard,
 	uploadPaymentScreenshot,

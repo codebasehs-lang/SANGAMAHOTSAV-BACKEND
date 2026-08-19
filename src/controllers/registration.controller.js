@@ -43,6 +43,20 @@ class RegistrationController {
     return ApiResponse.send(res, { data, meta, message: messages.FETCHED });
   });
 
+  attendanceLookup = asyncHandler(async (req, res) => {
+    const data = await registrationService.lookupAttendance(req.query);
+    return ApiResponse.send(res, { data, message: messages.FETCHED });
+  });
+
+  updateAttendance = asyncHandler(async (req, res) => {
+    const registration = await registrationService.updateAttendance(
+      req.params.id,
+      req.body,
+      req.user.sub
+    );
+    return ApiResponse.send(res, { data: registration, message: messages.UPDATED });
+  });
+
   getById = asyncHandler(async (req, res) => {
     const registration = await registrationService.getById(req.params.id);
     return ApiResponse.send(res, {
