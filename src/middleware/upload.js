@@ -41,8 +41,16 @@ function createUploader({ fieldName, uploadSubDir, maxSizeMb }) {
   }).single(fieldName);
 }
 
-const uploadPaymentScreenshot = createUploader({
-  fieldName: 'paymentScreenshot',
+function createMultiUploader({ fieldNames, uploadSubDir, maxSizeMb }) {
+  return multer({
+    storage: createStorage(uploadSubDir),
+    fileFilter,
+    limits: { fileSize: maxSizeMb * 1024 * 1024 },
+  }).fields(fieldNames.map(name => ({ name, maxCount: 1 })));
+}
+
+const uploadPaymentScreenshot = createMultiUploader({
+  fieldNames: ['paymentScreenshot', 'paymentScreenshot1', 'paymentScreenshot2', 'paymentScreenshot3'],
   uploadSubDir: 'payment-screenshots',
   maxSizeMb: 5,
 });

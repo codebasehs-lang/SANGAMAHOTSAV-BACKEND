@@ -65,7 +65,7 @@ module.exports = (sequelize) => {
         allowNull: true,
       },
       // Field 5
-      comingFrom: { type: DataTypes.STRING(150), allowNull: false },
+      comingFrom: { type: DataTypes.STRING(150), allowNull: true },
       country: { type: DataTypes.STRING(100), allowNull: true },
       state: { type: DataTypes.STRING(100), allowNull: true },
       district: { type: DataTypes.STRING(150), allowNull: true },
@@ -134,6 +134,9 @@ module.exports = (sequelize) => {
       paymentReferenceId: { type: DataTypes.STRING(100), allowNull: true },
       payeeAccountName: { type: DataTypes.STRING(150), allowNull: true },
       paymentScreenshot: { type: DataTypes.STRING(500), allowNull: true },
+      paymentScreenshot1: { type: DataTypes.STRING(500), allowNull: true },
+      paymentScreenshot2: { type: DataTypes.STRING(500), allowNull: true },
+      paymentScreenshot3: { type: DataTypes.STRING(500), allowNull: true },
       allowPaymentScreenshotUpdate: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
