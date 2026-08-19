@@ -10,10 +10,26 @@ class RegistrationController {
   // Public
   create = asyncHandler(async (req, res) => {
     const payload = { ...req.body };
+    
+    // Handle both single file (legacy) and multiple files (new)
     if (req.file) {
-      // Store relative URL path so the frontend can fetch it
+      // Legacy: single paymentScreenshot
       payload.paymentScreenshot = `/uploads/payment-screenshots/${req.file.filename}`;
     }
+    
+    // Handle multiple screenshot uploads
+    if (req.files && typeof req.files === 'object') {
+      if (req.files.paymentScreenshot1 && req.files.paymentScreenshot1.length > 0) {
+        payload.paymentScreenshot1 = `/uploads/payment-screenshots/${req.files.paymentScreenshot1[0].filename}`;
+      }
+      if (req.files.paymentScreenshot2 && req.files.paymentScreenshot2.length > 0) {
+        payload.paymentScreenshot2 = `/uploads/payment-screenshots/${req.files.paymentScreenshot2[0].filename}`;
+      }
+      if (req.files.paymentScreenshot3 && req.files.paymentScreenshot3.length > 0) {
+        payload.paymentScreenshot3 = `/uploads/payment-screenshots/${req.files.paymentScreenshot3[0].filename}`;
+      }
+    }
+    
     const registration = await registrationService.create(payload);
     return ApiResponse.created(res, {
       data: registration,

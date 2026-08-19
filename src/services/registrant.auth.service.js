@@ -86,25 +86,28 @@ class RegistrantAuthService {
     return { profilePhoto: profilePhotoPath };
   }
 
-  async updatePaymentScreenshot(registrationId, paymentScreenshotPath) {
+  async updatePaymentScreenshot(registrationId, paymentScreenshotPath, installmentNumber = 1) {
     const registration = await registrationRepository.findById(registrationId);
     if (!registration) {
       throw ApiError.notFound(messages.NOT_FOUND);
     }
 
-    if (registration.paymentScreenshot && !registration.allowPaymentScreenshotUpdate) {
+    const screenshotField = `paymentScreenshot${installmentNumber}`;
+    if (registration[screenshotField] && !registration.allowPaymentScreenshotUpdate) {
       throw ApiError.forbidden(
         'Payment screenshot update is currently disabled. Please contact admin.'
       );
     }
 
-    await registrationRepository.update(registrationId, {
-      paymentScreenshot: paymentScreenshotPath,
+    const updateData = {
+      [screenshotField]: paymentScreenshotPath,
       allowPaymentScreenshotUpdate: false,
-    });
+    };
+
+    await registrationRepository.update(registrationId, updateData);
 
     return {
-      paymentScreenshot: paymentScreenshotPath,
+      [screenshotField]: paymentScreenshotPath,
       allowPaymentScreenshotUpdate: false,
     };
   }
@@ -143,6 +146,9 @@ class RegistrantAuthService {
       paymentReferenceId: registration.paymentReferenceId,
       payeeAccountName: registration.payeeAccountName,
       paymentScreenshot: registration.paymentScreenshot,
+      paymentScreenshot1: registration.paymentScreenshot1,
+      paymentScreenshot2: registration.paymentScreenshot2,
+      paymentScreenshot3: registration.paymentScreenshot3,
       allowPaymentScreenshotUpdate: registration.allowPaymentScreenshotUpdate,
       profilePhoto: registration.profilePhoto,
       paymentStatus: registration.paymentStatus,

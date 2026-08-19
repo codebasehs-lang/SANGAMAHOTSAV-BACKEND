@@ -190,15 +190,10 @@ const createRegistrationRules = [
     .withMessage('Mobile number is required.')
     .matches(/^[0-9]{10,15}$/)
     .withMessage('Mobile number must be 10-15 digits.'),
-  body('comingFrom')
-    .trim()
-    .notEmpty()
-    .withMessage('Coming from is required.')
-    .isLength({ max: 150 }),
+  body('comingFrom').optional().trim().isLength({ max: 150 }),
   body('email')
+    .optional()
     .trim()
-    .notEmpty()
-    .withMessage('Email ID is required.')
     .isEmail()
     .withMessage('Email ID must be a valid email address.')
     .isLength({ max: 254 }),
@@ -221,7 +216,11 @@ const createRegistrationRules = [
     if (req.body.devoteeAshram === 'BRAHMACHARI') {
       return true;
     }
-    if (req.file) {
+    // Check if at least one screenshot file is provided
+    if (req.files && Object.keys(req.files).some(key => 
+      (key === 'paymentScreenshot' || key === 'paymentScreenshot1' || key === 'paymentScreenshot2' || key === 'paymentScreenshot3') 
+      && req.files[key]
+    )) {
       return true;
     }
 
