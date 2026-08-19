@@ -13,6 +13,28 @@ class RegistrationRepository {
     return Registration.findOne({ where: { mobile_number: mobileNumber } });
   }
 
+  findByCheckinToken(checkinToken) {
+    return Registration.findOne({
+      where: { checkin_token: checkinToken },
+      include: [{ model: AccommodationAssignment, as: 'assignment' }],
+    });
+  }
+
+  searchForAttendance(search, status) {
+    const where = {};
+    if (search) {
+      const like = { [Op.like]: `%${search}%` };
+      where[Op.or] = [{ name: like }, { mobile_number: like }, { coming_from: like }];
+    }
+    if (status) where.attendance_status = status;
+    return Registration.findAll({
+      where,
+      limit: 100,
+      order: [['name', 'ASC']],
+      include: [{ model: AccommodationAssignment, as: 'assignment' }],
+    });
+  }
+
   findById(id, options = {}) {
     return Registration.findByPk(id, options);
   }
