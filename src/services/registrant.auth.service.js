@@ -127,6 +127,7 @@ class RegistrantAuthService {
       initiatedName: registration.initiatedName,
       age: registration.age,
       devoteeCategory: registration.devoteeCategory,
+      familyMembers: registration.familyMembers || [],
       mobileNumber: registration.mobileNumber,
       comingFrom: registration.comingFrom,
       facilitatorName: registration.facilitatorName,
