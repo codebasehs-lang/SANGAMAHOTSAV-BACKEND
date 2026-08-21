@@ -30,5 +30,6 @@ router.use('/feedbacks', require('./feedback.routes'));
 router.use('/dashboard', require('./dashboard.routes'));
 router.use('/donations', require('./donation.routes'));
 router.use('/seva', require('./seva.routes'));
+router.use('/registration-settings', require('./registrationSetting.routes'));
 
 module.exports = router;
