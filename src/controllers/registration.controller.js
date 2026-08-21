@@ -1,5 +1,7 @@
 const registrationService = require('../services/registration.service');
+const registrationSettingService = require('../services/registrationSetting.service');
 const asyncHandler = require('../utils/asyncHandler');
+const ApiError = require('../utils/ApiError');
 const ApiResponse = require('../utils/ApiResponse');
 const messages = require('../constants/messages');
 
@@ -9,6 +11,13 @@ const messages = require('../constants/messages');
 class RegistrationController {
   // Public
   create = asyncHandler(async (req, res) => {
+    const setting = await registrationSettingService.getSetting();
+    if (!setting.isOpen) {
+      throw ApiError.forbidden(
+        setting.closedMessage || 'Registrations are currently closed.'
+      );
+    }
+
     const payload = { ...req.body };
     
     // Handle both single file (legacy) and multiple files (new)
@@ -17,8 +26,11 @@ class RegistrationController {
       payload.paymentScreenshot = `/uploads/payment-screenshots/${req.file.filename}`;
     }
     
-    // Handle multiple screenshot uploads
+    // Handle multiple screenshot uploads (multer .fields() populates req.files, not req.file)
     if (req.files && typeof req.files === 'object') {
+      if (req.files.paymentScreenshot && req.files.paymentScreenshot.length > 0) {
+        payload.paymentScreenshot = `/uploads/payment-screenshots/${req.files.paymentScreenshot[0].filename}`;
+      }
       if (req.files.paymentScreenshot1 && req.files.paymentScreenshot1.length > 0) {
         payload.paymentScreenshot1 = `/uploads/payment-screenshots/${req.files.paymentScreenshot1[0].filename}`;
       }
