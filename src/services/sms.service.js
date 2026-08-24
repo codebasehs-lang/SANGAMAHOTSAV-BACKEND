@@ -217,7 +217,24 @@ class SmsService {
   async sendPaymentConfirmation(registration, adminId) {
     const template = TEMPLATES[SMS_CAMPAIGN_TYPE.PAYMENT_CONFIRMED];
     const devoteeName = registration.initiatedName || registration.name || '';
-    const templateData = { name: devoteeName };
+    const familyMembers = Array.isArray(registration.familyMembers)
+      ? registration.familyMembers.filter((member) => member && member.name)
+      : [];
+    const accommodation = registration.sharedAccommodation || registration.familyAccommodation;
+    const accommodationLabels = {
+      DORMITORY: 'AC Dormitory',
+      NON_AC_SHARING: 'Non AC Sharing',
+      AC_SHARING: 'AC Sharing Room',
+      DELUXE_AC: 'Deluxe AC Room',
+      PREMIUM_AC: 'Premium AC Room',
+    };
+    const devoteeCount = familyMembers.length + 1;
+    const templateData = {
+      name: devoteeName,
+      amount: Number(registration.amountPaid || 0).toLocaleString('en-IN'),
+      accommodation: accommodationLabels[accommodation] || 'accommodation',
+      devoteeText: `${devoteeCount} ${devoteeCount === 1 ? 'devotee' : 'devotees'}`,
+    };
     const templatePlaceholders = this._getTemplateTokens(template);
     const renderedMessage = renderTemplate(template, templateData);
 
