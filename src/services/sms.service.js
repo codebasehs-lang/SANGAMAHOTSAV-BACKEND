@@ -252,10 +252,7 @@ class SmsService {
       env.whatsapp.paymentTemplateName || env.whatsapp.defaultTemplateName || null;
 
     const templateComponents = paymentTemplateName
-      ? this._buildTemplateComponents(template, templateData, {
-          templateName: paymentTemplateName,
-          fallbackText: renderedMessage,
-        })
+      ? this._buildTemplateComponents(template, templateData)
       : null;
 
     logger.info('Payment confirmation WhatsApp payload prepared', {
@@ -348,50 +345,30 @@ class SmsService {
   }
 
   /**
-   * Builds WhatsApp template body components.
-   * Meta templates may accept a single localizable parameter even when the app
-   * renders a longer confirmation message. In that case, collapse the message to
-   * one body param so the payload matches the template contract.
+   * Builds WhatsApp template body components in the format Meta expects.
+   * Meta templates use numbered placeholders like {{1}}, {{2}}, ... or named
+   * placeholders depending on the template definition. Parameter values must not
+   * contain newline/tab characters or long runs of spaces.
    */
-  _buildTemplateComponents(template, templateData = {}, options = {}) {
+  _buildTemplateComponents(template, templateData = {}) {
     const tokens = this._getTemplateTokens(template);
-    const templateName = String(options.templateName || '').toLowerCase();
-    const singleValueText =
-      options.fallbackText != null && String(options.fallbackText).trim() !== ''
-        ? String(options.fallbackText)
-        : tokens.length === 1
-        ? templateData[tokens[0]] != null
-          ? String(templateData[tokens[0]])
-          : ''
-        : '';
-
-    const isSingleParameterTemplate =
-      ['payment_status', 'payment_confirmation'].some((name) =>
-        templateName.includes(name)
-      ) ||
-      (tokens.length === 1 && /^\d+$/.test(tokens[0]));
-
-    if (isSingleParameterTemplate) {
-      return [
-        {
-          type: 'body',
-          parameters: [{ type: 'text', text: singleValueText }],
-        },
-      ];
-    }
-
     if (tokens.length === 0) return null;
 
-    return [
-      {
-        type: 'body',
-        parameters: tokens.map((token) => ({
-          type: 'text',
-          text: templateData[token] != null ? String(templateData[token]) : '',
-          parameter_name: token,
-        })),
-      },
-    ];
+    const sanitizeValue = (value) =>
+      String(value ?? '')
+        .replace(/\r?\n|\t/g, ' ')
+        .replace(/\s{5,}/g, ' ')
+        .trim();
+
+    const hasNumberedPlaceholders = tokens.every((token) => /^\d+$/.test(token));
+    const parameters = tokens.map((token) => {
+      const text = sanitizeValue(templateData[token]);
+      return hasNumberedPlaceholders
+        ? { type: 'text', text }
+        : { type: 'text', text, parameter_name: token };
+    });
+
+    return [{ type: 'body', parameters }];
   }
 
 }
