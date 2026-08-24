@@ -252,7 +252,10 @@ class SmsService {
       env.whatsapp.paymentTemplateName || env.whatsapp.defaultTemplateName || null;
 
     const templateComponents = paymentTemplateName
-      ? this._buildTemplateComponents(template, templateData)
+      ? this._buildTemplateComponents(template, templateData, {
+          templateName: paymentTemplateName,
+          fallbackText: renderedMessage,
+        })
       : null;
 
     logger.info('Payment confirmation WhatsApp payload prepared', {
@@ -345,11 +348,38 @@ class SmsService {
   }
 
   /**
-   * Builds WhatsApp template body components in the same format used by
-   * payment confirmation sends.
+   * Builds WhatsApp template body components.
+   * Meta templates may accept a single localizable parameter even when the app
+   * renders a longer confirmation message. In that case, collapse the message to
+   * one body param so the payload matches the template contract.
    */
-  _buildTemplateComponents(template, templateData = {}) {
+  _buildTemplateComponents(template, templateData = {}, options = {}) {
     const tokens = this._getTemplateTokens(template);
+    const templateName = String(options.templateName || '').toLowerCase();
+    const singleValueText =
+      options.fallbackText != null && String(options.fallbackText).trim() !== ''
+        ? String(options.fallbackText)
+        : tokens.length === 1
+        ? templateData[tokens[0]] != null
+          ? String(templateData[tokens[0]])
+          : ''
+        : '';
+
+    const isSingleParameterTemplate =
+      ['payment_status', 'payment_confirmation'].some((name) =>
+        templateName.includes(name)
+      ) ||
+      (tokens.length === 1 && /^\d+$/.test(tokens[0]));
+
+    if (isSingleParameterTemplate) {
+      return [
+        {
+          type: 'body',
+          parameters: [{ type: 'text', text: singleValueText }],
+        },
+      ];
+    }
+
     if (tokens.length === 0) return null;
 
     return [
