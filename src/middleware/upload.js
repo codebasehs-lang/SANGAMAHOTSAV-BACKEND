@@ -61,4 +61,21 @@ const uploadRegistrantProfilePhoto = createUploader({
   maxSizeMb: 2,
 });
 
-module.exports = { uploadPaymentScreenshot, uploadRegistrantProfilePhoto };
+const uploadExcel = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (req, file, cb) => {
+    const ext = path.extname(file.originalname || '').toLowerCase();
+    if (['.xlsx', '.xls', '.csv'].includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only Excel (.xlsx, .xls) or CSV files are allowed.'));
+    }
+  },
+  limits: { fileSize: 10 * 1024 * 1024 },
+}).single('file');
+
+module.exports = {
+  uploadPaymentScreenshot,
+  uploadRegistrantProfilePhoto,
+  uploadExcel,
+};

@@ -151,6 +151,113 @@ class ExcelService {
 
     return workbook.xlsx.writeBuffer();
   }
+
+  async buildHotelTemplateWorkbook() {
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'SANGAMAHOTSAV';
+    workbook.created = new Date();
+
+    const sheet = workbook.addWorksheet('Hotels & Rooms');
+    sheet.columns = [
+      { header: 'Hotel Name', key: 'hotelName', width: 26 },
+      { header: 'Hotel Address', key: 'hotelAddress', width: 32 },
+      { header: 'Google Map Link', key: 'hotelMapLink', width: 35 },
+      { header: 'Room No', key: 'roomNo', width: 14 },
+      { header: 'Room Type', key: 'roomType', width: 20 },
+      { header: 'Room Capacity', key: 'roomCapacity', width: 16 },
+      { header: 'Current Occupancy', key: 'currentOccupancy', width: 18 },
+      { header: 'Notes', key: 'notes', width: 25 },
+      { header: 'Active', key: 'isActive', width: 12 },
+    ];
+
+    sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    sheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF1E293B' },
+    };
+    sheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
+
+    const sampleRows = [
+      {
+        hotelName: 'Hotel Vrindavan Palace',
+        hotelAddress: 'Raman Reti Road, Vrindavan',
+        hotelMapLink: 'https://maps.google.com',
+        roomNo: '101',
+        roomType: 'DELUXE_AC',
+        roomCapacity: 2,
+        currentOccupancy: 0,
+        notes: 'Ground floor near reception',
+        isActive: 'Yes',
+      },
+      {
+        hotelName: 'Hotel Vrindavan Palace',
+        hotelAddress: 'Raman Reti Road, Vrindavan',
+        hotelMapLink: 'https://maps.google.com',
+        roomNo: '102',
+        roomType: 'DELUXE_AC',
+        roomCapacity: 2,
+        currentOccupancy: 0,
+        notes: 'Ground floor',
+        isActive: 'Yes',
+      },
+      {
+        hotelName: 'Hotel Vrindavan Palace',
+        hotelAddress: 'Raman Reti Road, Vrindavan',
+        hotelMapLink: 'https://maps.google.com',
+        roomNo: 'D1',
+        roomType: 'DORMITORY',
+        roomCapacity: 10,
+        currentOccupancy: 0,
+        notes: 'Large Hall A (Male Prabhujis)',
+        isActive: 'Yes',
+      },
+      {
+        hotelName: 'ISKCON Guest House',
+        hotelAddress: 'Bhaktivedanta Marg, Vrindavan',
+        hotelMapLink: 'https://maps.google.com',
+        roomNo: '201',
+        roomType: 'PREMIUM_AC',
+        roomCapacity: 3,
+        currentOccupancy: 0,
+        notes: '2nd Floor with Balcony',
+        isActive: 'Yes',
+      },
+      {
+        hotelName: 'Sri Govinda Dham',
+        hotelAddress: 'Kalyan Nagar, Vrindavan',
+        hotelMapLink: '',
+        roomNo: '',
+        roomType: '',
+        roomCapacity: '',
+        currentOccupancy: '',
+        notes: 'Hotel without initial rooms',
+        isActive: '',
+      },
+    ];
+
+    sampleRows.forEach((row) => sheet.addRow(row));
+
+    const helpSheet = workbook.addWorksheet('Instructions & Options');
+    helpSheet.columns = [
+      { header: 'Field Name', key: 'field', width: 22 },
+      { header: 'Required?', key: 'required', width: 14 },
+      { header: 'Allowed Values / Description', key: 'desc', width: 55 },
+    ];
+    helpSheet.getRow(1).font = { bold: true };
+
+    helpSheet.addRow({ field: 'Hotel Name', required: 'Yes', desc: 'Full name of the hotel' });
+    helpSheet.addRow({ field: 'Hotel Address', required: 'Optional', desc: 'Address of the hotel' });
+    helpSheet.addRow({ field: 'Google Map Link', required: 'Optional', desc: 'Valid URL to Google Maps location' });
+    helpSheet.addRow({ field: 'Room No', required: 'Optional', desc: 'Room code or number (e.g. 101, A2, DORM-1)' });
+    helpSheet.addRow({ field: 'Room Type', required: 'Optional', desc: 'Allowed values: DORMITORY, NON_AC_SHARING, AC_SHARING, DELUXE_AC, PREMIUM_AC' });
+    helpSheet.addRow({ field: 'Room Capacity', required: 'Optional', desc: 'Max occupants (Positive integer, default: 1)' });
+    helpSheet.addRow({ field: 'Current Occupancy', required: 'Optional', desc: 'Current occupants count (Integer >= 0, default: 0)' });
+    helpSheet.addRow({ field: 'Notes', required: 'Optional', desc: 'Internal remarks or room features' });
+    helpSheet.addRow({ field: 'Active', required: 'Optional', desc: 'Yes / No or True / False (Default: Yes)' });
+
+    return workbook.xlsx.writeBuffer();
+  }
 }
 
 module.exports = new ExcelService();
