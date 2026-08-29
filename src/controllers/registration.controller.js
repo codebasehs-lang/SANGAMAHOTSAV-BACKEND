@@ -119,6 +119,38 @@ class RegistrationController {
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     return res.send(Buffer.from(buffer));
   });
+
+  getChildren = asyncHandler(async (req, res) => {
+    const result = await registrationService.getChildren(req.query);
+    return ApiResponse.send(res, {
+      data: result.data,
+      meta: result.meta,
+      summary: result.summary,
+      message: messages.FETCHED,
+    });
+  });
+
+  updateChildGiftStatus = asyncHandler(async (req, res) => {
+    const result = await registrationService.updateChildGiftStatus(
+      req.body,
+      req.user?.sub
+    );
+    return ApiResponse.send(res, {
+      data: result,
+      message: 'Gift status updated successfully.',
+    });
+  });
+
+  exportChildren = asyncHandler(async (req, res) => {
+    const buffer = await registrationService.exportChildrenToExcel(req.query);
+    const filename = `children_gifts_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    return res.send(Buffer.from(buffer));
+  });
 }
 
 module.exports = new RegistrationController();

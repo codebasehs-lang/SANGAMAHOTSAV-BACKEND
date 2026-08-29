@@ -211,6 +211,200 @@ class RegistrationService {
     return excelService.buildRegistrationsWorkbook(rows);
   }
 
+  /** Admin: get list of children (age <= maxAge) with gift status */
+  async getChildren(query = {}) {
+    const search = (query.search || '').trim().toLowerCase();
+    const giftStatus = (query.giftStatus || '').toUpperCase();
+    const genderFilter = (query.gender || '').toUpperCase();
+    const ageGroupFilter = query.ageGroup || '';
+    const maxAge = Number(query.maxAge) || 16;
+    const page = Math.max(1, parseInt(query.page, 10) || 1);
+    const limit = Math.max(1, parseInt(query.limit, 10) || 20);
+
+    const rows = await registrationRepository.findAllForChildren();
+
+    const allChildren = [];
+    let totalSystemChildren = 0;
+    let giftsGivenCount = 0;
+    let giftsPendingCount = 0;
+    let maleCount = 0;
+    let femaleCount = 0;
+
+    for (const r of rows) {
+      const plain = typeof r.get === 'function' ? r.get({ plain: true }) : r;
+
+      // 1. Check main registrant
+      if (plain.age !== null && plain.age !== undefined && Number(plain.age) <= maxAge) {
+        const giftGiven = Boolean(plain.giftGiven);
+        totalSystemChildren += 1;
+        if (giftGiven) giftsGivenCount += 1;
+        else giftsPendingCount += 1;
+
+        const g = String(plain.gender || '').toUpperCase();
+        if (g === 'MALE') maleCount += 1;
+        else if (g === 'FEMALE') femaleCount += 1;
+
+        allChildren.push({
+          id: `reg-${plain.id}-main`,
+          registrationId: plain.id,
+          personType: 'MAIN',
+          memberIndex: null,
+          childName: plain.name,
+          age: Number(plain.age),
+          gender: plain.gender || null,
+          parentName: plain.name,
+          mobileNumber: plain.mobileNumber,
+          relationship: 'Main Registrant',
+          comingFrom: plain.comingFrom || '',
+          devoteeCategory: plain.devoteeCategory || '',
+          attendanceStatus: plain.attendanceStatus || 'NOT_ARRIVED',
+          giftGiven,
+          giftGivenAt: plain.giftGivenAt || null,
+          giftGivenBy: plain.giftGivenBy || null,
+          createdAt: plain.createdAt,
+        });
+      }
+
+      // 2. Check family members
+      const familyMembers = Array.isArray(plain.familyMembers) ? plain.familyMembers : [];
+      familyMembers.forEach((member, index) => {
+        if (!member || !member.name) return;
+        const memberAge = member.age !== null && member.age !== undefined ? Number(member.age) : NaN;
+        if (!isNaN(memberAge) && memberAge <= maxAge) {
+          const giftGiven = Boolean(member.giftGiven);
+          totalSystemChildren += 1;
+          if (giftGiven) giftsGivenCount += 1;
+          else giftsPendingCount += 1;
+
+          const g = String(member.gender || '').toUpperCase();
+          if (g === 'MALE') maleCount += 1;
+          else if (g === 'FEMALE') femaleCount += 1;
+
+          allChildren.push({
+            id: `reg-${plain.id}-fm-${index}`,
+            registrationId: plain.id,
+            personType: 'FAMILY_MEMBER',
+            memberIndex: index,
+            childName: member.name,
+            age: memberAge,
+            gender: member.gender || null,
+            parentName: plain.name,
+            mobileNumber: plain.mobileNumber,
+            relationship: member.relationship || 'Family Member',
+            comingFrom: plain.comingFrom || '',
+            devoteeCategory: member.devoteeCategory || plain.devoteeCategory || '',
+            attendanceStatus: plain.attendanceStatus || 'NOT_ARRIVED',
+            giftGiven,
+            giftGivenAt: member.giftGivenAt || null,
+            giftGivenBy: member.giftGivenBy || null,
+            createdAt: plain.createdAt,
+          });
+        }
+      });
+    }
+
+    // Filter
+    let filtered = allChildren;
+
+    if (search) {
+      filtered = filtered.filter((c) => {
+        return (
+          c.childName.toLowerCase().includes(search) ||
+          c.parentName.toLowerCase().includes(search) ||
+          c.mobileNumber.toLowerCase().includes(search) ||
+          (c.comingFrom && c.comingFrom.toLowerCase().includes(search)) ||
+          (c.relationship && c.relationship.toLowerCase().includes(search))
+        );
+      });
+    }
+
+    if (giftStatus === 'GIVEN' || giftStatus === 'YES') {
+      filtered = filtered.filter((c) => c.giftGiven === true);
+    } else if (giftStatus === 'PENDING' || giftStatus === 'NO') {
+      filtered = filtered.filter((c) => c.giftGiven === false);
+    }
+
+    if (genderFilter === 'MALE' || genderFilter === 'FEMALE') {
+      filtered = filtered.filter((c) => String(c.gender).toUpperCase() === genderFilter);
+    }
+
+    if (ageGroupFilter === '0-5') {
+      filtered = filtered.filter((c) => c.age >= 0 && c.age <= 5);
+    } else if (ageGroupFilter === '6-12') {
+      filtered = filtered.filter((c) => c.age >= 6 && c.age <= 12);
+    } else if (ageGroupFilter === '13-16') {
+      filtered = filtered.filter((c) => c.age >= 13 && c.age <= 16);
+    }
+
+    const totalFiltered = filtered.length;
+    const totalPages = Math.ceil(totalFiltered / limit) || 1;
+    const startIndex = (page - 1) * limit;
+    const paginated = filtered.slice(startIndex, startIndex + limit);
+
+    return {
+      data: paginated,
+      meta: {
+        page,
+        limit,
+        total: totalFiltered,
+        totalPages,
+      },
+      summary: {
+        totalChildren: totalSystemChildren,
+        giftsGivenCount,
+        giftsPendingCount,
+        maleCount,
+        femaleCount,
+      },
+    };
+  }
+
+  /** Admin: toggle gift given status for a child (main registrant or family member) */
+  async updateChildGiftStatus({ registrationId, personType, memberIndex, giftGiven }, adminId) {
+    const registration = await registrationRepository.findById(registrationId);
+    if (!registration) {
+      throw ApiError.notFound('Registration not found.');
+    }
+
+    const isGiven = Boolean(giftGiven);
+    const now = new Date();
+
+    if (personType === 'MAIN') {
+      await registrationRepository.update(registrationId, {
+        giftGiven: isGiven,
+        giftGivenAt: isGiven ? now : null,
+        giftGivenBy: isGiven ? adminId : null,
+      });
+    } else if (personType === 'FAMILY_MEMBER') {
+      const familyMembers = Array.isArray(registration.familyMembers)
+        ? [...registration.familyMembers]
+        : [];
+      const idx = Number(memberIndex);
+      if (idx < 0 || idx >= familyMembers.length) {
+        throw ApiError.badRequest('Family member not found at specified index.');
+      }
+
+      familyMembers[idx] = {
+        ...familyMembers[idx],
+        giftGiven: isGiven,
+        giftGivenAt: isGiven ? now.toISOString() : null,
+        giftGivenBy: isGiven ? adminId : null,
+      };
+
+      await registrationRepository.update(registrationId, { familyMembers });
+    } else {
+      throw ApiError.badRequest('Invalid personType provided.');
+    }
+
+    return { success: true, giftGiven: isGiven };
+  }
+
+  /** Admin: export children list to Excel */
+  async exportChildrenToExcel(query) {
+    const result = await this.getChildren({ ...query, limit: 100000, page: 1 });
+    return excelService.buildChildrenWorkbook(result.data);
+  }
+
   _buildOrder(query) {
     const field = SORTABLE_FIELDS.has(query.sortBy) ? query.sortBy : 'created_at';
     const direction =

@@ -166,6 +166,14 @@ module.exports = (sequelize) => {
       },
       // Field 20
       comments: { type: DataTypes.TEXT, allowNull: true },
+      // Gift tracking
+      giftGiven: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
+      giftGivenAt: { type: DataTypes.DATE, allowNull: true },
+      giftGivenBy: { type: DataTypes.BIGINT.UNSIGNED, allowNull: true },
       // Derived assignment state
       accommodationStatus: {
         type: DataTypes.ENUM(...values(ACCOMMODATION_STATUS)),
