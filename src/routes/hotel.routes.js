@@ -2,6 +2,7 @@ const { Router } = require('express');
 const hotelController = require('../controllers/hotel.controller');
 const validate = require('../middleware/validate');
 const { authGuard, requireAdmin, requireEditor } = require('../middleware/auth');
+const { uploadExcel } = require('../middleware/upload');
 const {
   createRules,
   updateRules,
@@ -17,6 +18,8 @@ const router = Router();
 router.use(authGuard, requireAdmin);
 
 router.get('/', hotelController.list);
+router.get('/import-template', hotelController.downloadImportTemplate);
+router.post('/import-excel', requireEditor, uploadExcel, hotelController.importExcel);
 router.post('/', requireEditor, validate(createRules), hotelController.create);
 router.get('/:id', validate(idParamRule), hotelController.getById);
 router.put('/:id', requireEditor, validate(updateRules), hotelController.update);
