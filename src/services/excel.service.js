@@ -109,6 +109,48 @@ class ExcelService {
 
     return workbook.xlsx.writeBuffer();
   }
+
+  async buildChildrenWorkbook(children) {
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'SANGAMAHOTSAV';
+    workbook.created = new Date();
+
+    const sheet = workbook.addWorksheet('Children Gifts List');
+    sheet.columns = [
+      { header: 'S.No', key: 'sNo', width: 8 },
+      { header: 'Child Name', key: 'childName', width: 26 },
+      { header: 'Age', key: 'age', width: 8 },
+      { header: 'Gender', key: 'gender', width: 12 },
+      { header: 'Type', key: 'relationship', width: 18 },
+      { header: 'Parent / Main Devotee', key: 'parentName', width: 26 },
+      { header: 'Contact Mobile', key: 'mobileNumber', width: 16 },
+      { header: 'Coming From', key: 'comingFrom', width: 20 },
+      { header: 'Attendance Status', key: 'attendanceStatus', width: 18 },
+      { header: 'Gift Given', key: 'giftGivenText', width: 14 },
+      { header: 'Registration ID', key: 'registrationId', width: 15 },
+    ];
+
+    sheet.getRow(1).font = { bold: true };
+    sheet.getRow(1).alignment = { vertical: 'middle' };
+
+    children.forEach((c, idx) => {
+      sheet.addRow({
+        sNo: idx + 1,
+        childName: c.childName,
+        age: c.age,
+        gender: genderLabel(c.gender),
+        relationship: c.relationship,
+        parentName: c.parentName,
+        mobileNumber: c.mobileNumber,
+        comingFrom: c.comingFrom || '',
+        attendanceStatus: c.attendanceStatus || 'NOT_ARRIVED',
+        giftGivenText: c.giftGiven ? 'Yes' : 'No',
+        registrationId: c.registrationId,
+      });
+    });
+
+    return workbook.xlsx.writeBuffer();
+  }
 }
 
 module.exports = new ExcelService();

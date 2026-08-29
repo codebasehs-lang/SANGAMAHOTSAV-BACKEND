@@ -69,6 +69,13 @@ class RegistrationRepository {
     });
   }
 
+  findAllForChildren() {
+    return Registration.findAll({
+      order: [['created_at', 'DESC']],
+      include: [{ model: AccommodationAssignment, as: 'assignment' }],
+    });
+  }
+
   update(id, data) {
     return Registration.update(data, { where: { id } });
   }
