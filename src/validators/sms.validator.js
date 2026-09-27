@@ -15,6 +15,10 @@ const sendCampaignRules = [
     .isLength({ max: 1000 })
     .withMessage('Message must not exceed 1000 characters.'),
   body('registrationIds')
+    .if(body('type').equals(SMS_CAMPAIGN_TYPE.DONATION))
+    .isArray({ min: 1 })
+    .withMessage('Select at least one approved donation-only recipient.'),
+  body('registrationIds')
     .optional({ nullable: true })
     .isArray()
     .withMessage('registrationIds must be an array of ids.'),
