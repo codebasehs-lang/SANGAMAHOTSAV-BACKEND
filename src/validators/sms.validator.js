@@ -20,14 +20,14 @@ const sendCampaignRules = [
       req.body.recipientMode !== 'ANY_DEVOTEE'
     )
     .isArray({ min: 1 })
-    .withMessage('Select at least one approved donation-only recipient.'),
+    .withMessage('Select at least one donor.'),
   body('registrationIds')
     .if((value, { req }) =>
       req.body.type === SMS_CAMPAIGN_TYPE.NOT_STAYING &&
       req.body.recipientMode !== 'ANY_DEVOTEE'
     )
     .isArray({ min: 1 })
-    .withMessage('Select at least one approved non-staying devotee.'),
+    .withMessage('Select at least one non-staying devotee.'),
   body('recipientMode')
     .optional()
     .isIn(['ANY_DEVOTEE'])

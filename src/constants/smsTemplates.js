@@ -96,7 +96,7 @@ const DONATION_THANK_YOU_TEMPLATE = [
   '',
   'Dear *{{1}}*,',
   '',
-  'Thank you for your generous donation towards *Sanga Mahotsav 2026*. Though you will not be attending the event, your support is greatly appreciated and helps make this festival possible.',
+  'Thank you for your generous donation towards *Sanga Mahotsav 2026*. Your support is greatly appreciated and helps make this festival possible.',
   '',
   'We pray for the blessings of Sri Sri Krishna Balaram upon you and your family.',
   '',

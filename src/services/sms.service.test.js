@@ -116,3 +116,43 @@ test('Application notice rejects Any Devotee mode before creating campaign', asy
   );
   assert.equal(mocks.createCampaign.mock.callCount(), 0);
 });
+
+test('Donation category campaign fetches any donor regardless of attendance or payment status', async (t) => {
+  const previous = env.whatsapp.donationTemplateName;
+  env.whatsapp.donationTemplateName = 'donation_thank_you';
+  t.after(() => { env.whatsapp.donationTemplateName = previous; });
+  t.mock.method(seminarHallService, 'getActive', async () => hall);
+  const findDonationRecipients = t.mock.method(
+    smsRepository, 'findDonationOnlyRecipients', async () => [registration]
+  );
+  t.mock.method(smsRepository, 'createCampaign', async () => ({ id: 10 }));
+  t.mock.method(smsRepository, 'createLog', async () => {});
+  t.mock.method(smsRepository, 'updateCampaign', async () => {});
+
+  const result = await smsService.sendCampaign({
+    type: 'DONATION', channel: 'WHATSAPP', registrationIds: [3],
+  }, 1);
+
+  assert.equal(result.totalRecipients, 1);
+  assert.deepEqual(findDonationRecipients.mock.calls[0].arguments, [[3]]);
+});
+
+test('Non-staying category campaign fetches any matching devotee regardless of payment status', async (t) => {
+  const previous = env.whatsapp.notStayingTemplateName;
+  env.whatsapp.notStayingTemplateName = 'not_staying';
+  t.after(() => { env.whatsapp.notStayingTemplateName = previous; });
+  t.mock.method(seminarHallService, 'getActive', async () => hall);
+  const findNotStayingRecipients = t.mock.method(
+    smsRepository, 'findNotStayingRecipients', async () => [registration]
+  );
+  t.mock.method(smsRepository, 'createCampaign', async () => ({ id: 10 }));
+  t.mock.method(smsRepository, 'createLog', async () => {});
+  t.mock.method(smsRepository, 'updateCampaign', async () => {});
+
+  const result = await smsService.sendCampaign({
+    type: 'NOT_STAYING', channel: 'WHATSAPP', registrationIds: [3],
+  }, 1);
+
+  assert.equal(result.totalRecipients, 1);
+  assert.deepEqual(findNotStayingRecipients.mock.calls[0].arguments, [[3]]);
+});

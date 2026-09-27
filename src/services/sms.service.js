@@ -58,8 +58,8 @@ class SmsService {
       if (!Array.isArray(registrationIds) || registrationIds.length === 0) {
         throw ApiError.badRequest(
           isDonationCampaign
-            ? 'Select at least one approved donation-only recipient.'
-            : 'Select at least one approved non-staying devotee.'
+            ? 'Select at least one donor.'
+            : 'Select at least one non-staying devotee.'
         );
       }
       if (isDonationCampaign && !env.whatsapp.donationTemplateName) {
@@ -158,8 +158,8 @@ class SmsService {
     ) {
       throw ApiError.badRequest(
         isDonationCampaign
-          ? 'One or more selected recipients are no longer approved donation-only donors.'
-          : 'One or more selected recipients are no longer approved non-staying devotees.'
+          ? 'One or more selected recipients no longer have a donation on record.'
+          : 'One or more selected recipients are no longer marked as attending but not staying.'
       );
     }
 

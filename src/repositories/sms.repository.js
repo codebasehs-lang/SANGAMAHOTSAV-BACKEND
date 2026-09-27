@@ -8,7 +8,6 @@ const {
   MESSAGE_CHANNEL,
   SMS_CAMPAIGN_STATUS,
   NON_ATTENDING_TYPE,
-  PAYMENT_STATUS,
 } = require('../constants/enums');
 const { Op } = require('sequelize');
 
@@ -67,11 +66,13 @@ class SmsRepository {
     });
   }
 
+  /**
+   * Any registration with at least one donation item — mirrors the
+   * Donations admin page, which does not filter by attendance or
+   * payment status.
+   */
   async findDonationOnlyRecipients(ids) {
-    const where = {
-      non_attending_type: NON_ATTENDING_TYPE.NON_ATTENDING,
-      payment_status: PAYMENT_STATUS.APPROVED,
-    };
+    const where = { donationItems: { [Op.ne]: null } };
     if (ids) where.id = { [Op.in]: ids };
 
     const registrations = await Registration.findAll({
@@ -86,10 +87,13 @@ class SmsRepository {
     );
   }
 
+  /**
+   * Any registration marked "Attending but not staying" — regardless of
+   * payment status, mirroring how the donation list is now fetched.
+   */
   findNotStayingRecipients(ids) {
     const where = {
       non_attending_type: NON_ATTENDING_TYPE.ATTENDING_NOT_STAYING,
-      payment_status: PAYMENT_STATUS.APPROVED,
     };
     if (ids) where.id = { [Op.in]: ids };
 
