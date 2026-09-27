@@ -45,6 +45,8 @@ const env = {
     languageCode: process.env.WHATSAPP_LANGUAGE_CODE || 'en',
     defaultTemplateName: process.env.WHATSAPP_DEFAULT_TEMPLATE_NAME || '',
     paymentTemplateName: process.env.WHATSAPP_PAYMENT_TEMPLATE_NAME || '',
+    notStayingTemplateName: process.env.WHATSAPP_NOT_STAYING_TEMPLATE_NAME || '',
+    donationTemplateName: process.env.WHATSAPP_DONATION_TEMPLATE_NAME || '',
   },
 };
 
