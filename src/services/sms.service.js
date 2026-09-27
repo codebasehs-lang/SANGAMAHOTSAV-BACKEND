@@ -29,24 +29,47 @@ const {
  * Admin-triggered only; no scheduling in V1.
  */
 class SmsService {
-  async sendCampaign({ type, registrationIds, message, channel }, adminId) {
+  async sendCampaign({ type, registrationIds, message, channel, recipientMode }, adminId) {
     const selectedChannel = channel || MESSAGE_CHANNEL.WHATSAPP;
     const isDonationCampaign = type === SMS_CAMPAIGN_TYPE.DONATION;
+    const isNotStayingCampaign = type === SMS_CAMPAIGN_TYPE.NOT_STAYING;
+    const isAnyDevotee = recipientMode === 'ANY_DEVOTEE';
 
-    if (isDonationCampaign) {
+    if (isAnyDevotee && selectedChannel === MESSAGE_CHANNEL.APPLICATION) {
+      throw ApiError.badRequest(
+        'Application notices are visible to everyone. Choose WhatsApp for Any Devotee mode.'
+      );
+    }
+    if (isAnyDevotee && (!Array.isArray(registrationIds) || registrationIds.length === 0)) {
+      throw ApiError.badRequest('Select at least one devotee for Any Devotee mode.');
+    }
+    if (selectedChannel === MESSAGE_CHANNEL.SMS) {
+      throw ApiError.badRequest(
+        'SMS channel is no longer supported in this build. Use WHATSAPP channel with Meta Cloud API.'
+      );
+    }
+
+    if (isDonationCampaign || isNotStayingCampaign) {
       if (selectedChannel !== MESSAGE_CHANNEL.WHATSAPP) {
         throw ApiError.badRequest(
-          'The donation thank-you template is only available on WhatsApp.'
+          'This campaign template is only available on WhatsApp.'
         );
       }
       if (!Array.isArray(registrationIds) || registrationIds.length === 0) {
         throw ApiError.badRequest(
-          'Select at least one approved donation-only recipient.'
+          isDonationCampaign
+            ? 'Select at least one approved donation-only recipient.'
+            : 'Select at least one approved non-staying devotee.'
         );
       }
-      if (!env.whatsapp.donationTemplateName) {
+      if (isDonationCampaign && !env.whatsapp.donationTemplateName) {
         throw ApiError.badRequest(
           'The donation WhatsApp template is not configured.'
+        );
+      }
+      if (isNotStayingCampaign && !env.whatsapp.notStayingTemplateName) {
+        throw ApiError.badRequest(
+          'The non-staying WhatsApp template is not configured.'
         );
       }
     }
@@ -91,6 +114,8 @@ class SmsService {
     let template;
     if (isDonationCampaign) {
       template = DONATION_THANK_YOU_TEMPLATE;
+    } else if (isNotStayingCampaign) {
+      template = NOT_STAYING_CONFIRMATION_TEMPLATE;
     } else if (type === SMS_CAMPAIGN_TYPE.CUSTOM) {
       if (!message || !message.trim()) {
         throw ApiError.badRequest('Message is required for a custom campaign.');
@@ -104,9 +129,18 @@ class SmsService {
     const activeHall = isDonationCampaign
       ? null
       : await seminarHallService.getActive();
+    if (isNotStayingCampaign && (!activeHall || !activeHall.hallMapLink)) {
+      throw ApiError.badRequest(
+        'An active seminar hall with a map link is required for this WhatsApp template.'
+      );
+    }
 
-    const recipients = isDonationCampaign
+    const recipients = isAnyDevotee
+      ? await smsRepository.findRecipients(registrationIds)
+      : isDonationCampaign
       ? await smsRepository.findDonationOnlyRecipients(registrationIds)
+      : isNotStayingCampaign
+      ? await smsRepository.findNotStayingRecipients(registrationIds)
       : Array.isArray(registrationIds) && registrationIds.length > 0
       ? await smsRepository.findRecipients(registrationIds)
       : await smsRepository.findAllRecipients();
@@ -114,18 +148,24 @@ class SmsService {
     if (recipients.length === 0) {
       throw ApiError.badRequest('No recipients found for this campaign.');
     }
+    if (isAnyDevotee && recipients.length !== new Set(registrationIds.map(Number)).size) {
+      throw ApiError.badRequest('One or more selected devotees could not be found.');
+    }
     if (
-      isDonationCampaign &&
+      !isAnyDevotee &&
+      (isDonationCampaign || isNotStayingCampaign) &&
       recipients.length !== new Set(registrationIds.map(Number)).size
     ) {
       throw ApiError.badRequest(
-        'One or more selected recipients are no longer approved donation-only donors.'
+        isDonationCampaign
+          ? 'One or more selected recipients are no longer approved donation-only donors.'
+          : 'One or more selected recipients are no longer approved non-staying devotees.'
       );
     }
 
     // Accommodation SMS requires an assignment; skip those without one.
     const eligible =
-      type === SMS_CAMPAIGN_TYPE.ACCOMMODATION
+      type === SMS_CAMPAIGN_TYPE.ACCOMMODATION && !isAnyDevotee
         ? recipients.filter((r) => r.assignment)
         : recipients;
 
@@ -151,21 +191,22 @@ class SmsService {
     for (const registration of eligible) {
       const templateData = isDonationCampaign
         ? { 1: registration.initiatedName || registration.name }
+        : isNotStayingCampaign
+        ? {
+            1: registration.initiatedName || registration.name,
+            2: activeHall.hallName,
+            3: activeHall.hallMapLink,
+          }
         : this._getTemplateData(registration, activeHall);
       const message = renderTemplate(template, templateData);
       const whatsappTemplateName = isDonationCampaign
         ? env.whatsapp.donationTemplateName
+        : isNotStayingCampaign
+        ? env.whatsapp.notStayingTemplateName
         : env.whatsapp.defaultTemplateName || null;
       const whatsappComponents = whatsappTemplateName
         ? this._buildTemplateComponents(template, templateData)
         : null;
-      // eslint-disable-next-line no-await-in-loop
-      if (selectedChannel === MESSAGE_CHANNEL.SMS) {
-        throw ApiError.badRequest(
-          'SMS channel is no longer supported in this build. Use WHATSAPP channel with Meta Cloud API.'
-        );
-      }
-
       const result = await sendWhatsapp({
         mobileNumber: registration.mobileNumber,
         message,
@@ -246,6 +287,15 @@ class SmsService {
         (total, donation) => total + Number(donation.amount || 0),
         0
       ),
+    }));
+  }
+
+  async listNotStayingRecipients() {
+    const registrations = await smsRepository.findNotStayingRecipients();
+    return registrations.map((registration) => ({
+      id: registration.id,
+      name: registration.initiatedName || registration.name,
+      mobileNumber: registration.mobileNumber,
     }));
   }
 

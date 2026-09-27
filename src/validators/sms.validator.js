@@ -15,9 +15,27 @@ const sendCampaignRules = [
     .isLength({ max: 1000 })
     .withMessage('Message must not exceed 1000 characters.'),
   body('registrationIds')
-    .if(body('type').equals(SMS_CAMPAIGN_TYPE.DONATION))
+    .if((value, { req }) =>
+      req.body.type === SMS_CAMPAIGN_TYPE.DONATION &&
+      req.body.recipientMode !== 'ANY_DEVOTEE'
+    )
     .isArray({ min: 1 })
     .withMessage('Select at least one approved donation-only recipient.'),
+  body('registrationIds')
+    .if((value, { req }) =>
+      req.body.type === SMS_CAMPAIGN_TYPE.NOT_STAYING &&
+      req.body.recipientMode !== 'ANY_DEVOTEE'
+    )
+    .isArray({ min: 1 })
+    .withMessage('Select at least one approved non-staying devotee.'),
+  body('recipientMode')
+    .optional()
+    .isIn(['ANY_DEVOTEE'])
+    .withMessage('Invalid recipient mode.'),
+  body('registrationIds')
+    .if(body('recipientMode').equals('ANY_DEVOTEE'))
+    .isArray({ min: 1 })
+    .withMessage('Select at least one devotee for Any Devotee mode.'),
   body('registrationIds')
     .optional({ nullable: true })
     .isArray()

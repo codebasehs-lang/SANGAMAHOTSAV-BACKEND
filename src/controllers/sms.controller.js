@@ -9,6 +9,11 @@ class SmsController {
     return ApiResponse.send(res, { data, message: messages.FETCHED });
   });
 
+  listNotStayingRecipients = asyncHandler(async (req, res) => {
+    const data = await smsService.listNotStayingRecipients();
+    return ApiResponse.send(res, { data, message: messages.FETCHED });
+  });
+
   sendCampaign = asyncHandler(async (req, res) => {
     const result = await smsService.sendCampaign(req.body, req.user.sub);
     const channelLabel = result.channel === 'WHATSAPP' ? 'WhatsApp' : 'SMS';

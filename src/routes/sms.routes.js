@@ -14,6 +14,7 @@ const router = Router();
 router.use(authGuard, requireAdmin);
 
 router.get('/donation-only-recipients', smsController.listDonationOnlyRecipients);
+router.get('/not-staying-recipients', smsController.listNotStayingRecipients);
 router.post(
   '/campaigns',
   requireEditor,

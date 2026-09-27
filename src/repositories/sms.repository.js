@@ -86,6 +86,19 @@ class SmsRepository {
     );
   }
 
+  findNotStayingRecipients(ids) {
+    const where = {
+      non_attending_type: NON_ATTENDING_TYPE.ATTENDING_NOT_STAYING,
+      payment_status: PAYMENT_STATUS.APPROVED,
+    };
+    if (ids) where.id = { [Op.in]: ids };
+
+    return Registration.findAll({
+      where,
+      attributes: ['id', 'name', 'initiatedName', 'mobileNumber'],
+    });
+  }
+
   /** Recent Application-channel messages — shown in registrant notice board. */
   findNoticeBoardMessages({ limit = 5 } = {}) {
     return SmsCampaign.findAll({
