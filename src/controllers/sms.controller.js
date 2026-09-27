@@ -4,6 +4,11 @@ const ApiResponse = require('../utils/ApiResponse');
 const messages = require('../constants/messages');
 
 class SmsController {
+  listDonationOnlyRecipients = asyncHandler(async (req, res) => {
+    const data = await smsService.listDonationOnlyRecipients();
+    return ApiResponse.send(res, { data, message: messages.FETCHED });
+  });
+
   sendCampaign = asyncHandler(async (req, res) => {
     const result = await smsService.sendCampaign(req.body, req.user.sub);
     const channelLabel = result.channel === 'WHATSAPP' ? 'WhatsApp' : 'SMS';
