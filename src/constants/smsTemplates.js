@@ -72,6 +72,37 @@ const TEMPLATES = Object.freeze({
   ].join('\n'),
 });
 
+const NOT_STAYING_CONFIRMATION_TEMPLATE = [
+  '*Hare Krishna!*',
+  '',
+  'Please accept our humble obeisances.',
+  '',
+  'Dear *{{1}}*,',
+  '',
+  'Your registration for *Sanga Mahotsav 2026* has been confirmed.',
+  '',
+  '*Seminar Hall Details*',
+  'Hall: *{{2}}*',
+  'Map: *{{3}}*',
+  '',
+  'We look forward to your participation in the seminar sessions and pray for a spiritually enriching experience.',
+  '',
+  '*Your Servants,*',
+  '*Sanga Mahotsav Management Committee*',
+].join('\n');
+
+const DONATION_THANK_YOU_TEMPLATE = [
+  '*Hare Krishna! 🙏*',
+  '',
+  'Dear *{{1}}*,',
+  '',
+  'Thank you for your generous donation towards *Sanga Mahotsav 2026*. Though you will not be attending the event, your support is greatly appreciated and helps make this festival possible.',
+  '',
+  'We pray for the blessings of Sri Sri Krishna Balaram upon you and your family.',
+  '',
+  '*Sanga Mahotsav Management Committee* 🙏',
+].join('\n');
+
 /**
  * Renders a template by replacing {{token}} placeholders.
  * Missing tokens resolve to an empty string.
@@ -82,4 +113,9 @@ function renderTemplate(template, data = {}) {
   );
 }
 
-module.exports = { TEMPLATES, renderTemplate };
+module.exports = {
+  TEMPLATES,
+  NOT_STAYING_CONFIRMATION_TEMPLATE,
+  DONATION_THANK_YOU_TEMPLATE,
+  renderTemplate,
+};
