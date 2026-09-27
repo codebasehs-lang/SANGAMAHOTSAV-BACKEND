@@ -144,7 +144,16 @@ WHATSAPP_WEBHOOK_VERIFY_TOKEN=sangamahotsav_verify_token
 WHATSAPP_LANGUAGE_CODE=en
 WHATSAPP_DEFAULT_TEMPLATE_NAME=
 WHATSAPP_PAYMENT_TEMPLATE_NAME=
+WHATSAPP_ACCOMMODATION_TEMPLATE_NAME=
+WHATSAPP_NOT_STAYING_TEMPLATE_NAME=
+WHATSAPP_DONATION_TEMPLATE_NAME=
 ```
+
+- `WHATSAPP_DEFAULT_TEMPLATE_NAME` — fallback template for reminder/custom campaigns and any campaign type without a dedicated template.
+- `WHATSAPP_PAYMENT_TEMPLATE_NAME` — used for the payment-confirmation message sent right after an admin approves payment.
+- `WHATSAPP_ACCOMMODATION_TEMPLATE_NAME` — used for the "Accommodation Assignment" SMS campaign (hotel/room/seminar hall details). Falls back to `WHATSAPP_DEFAULT_TEMPLATE_NAME` if unset.
+- `WHATSAPP_NOT_STAYING_TEMPLATE_NAME` — used for devotees marked "Attending but not staying".
+- `WHATSAPP_DONATION_TEMPLATE_NAME` — used for the donation thank-you campaign.
 
 ### Meta Dashboard Webhook Values
 

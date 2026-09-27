@@ -4,6 +4,7 @@ const { sendWhatsapp } = require('../utils/whatsappCloudClient');
 const env = require('../config/env');
 const {
   TEMPLATES,
+  ACCOMMODATION_CONFIRMATION_TEMPLATE,
   NOT_STAYING_CONFIRMATION_TEMPLATE,
   DONATION_THANK_YOU_TEMPLATE,
   renderTemplate,
@@ -33,6 +34,7 @@ class SmsService {
     const selectedChannel = channel || MESSAGE_CHANNEL.WHATSAPP;
     const isDonationCampaign = type === SMS_CAMPAIGN_TYPE.DONATION;
     const isNotStayingCampaign = type === SMS_CAMPAIGN_TYPE.NOT_STAYING;
+    const isAccommodationCampaign = type === SMS_CAMPAIGN_TYPE.ACCOMMODATION;
     const isAnyDevotee = recipientMode === 'ANY_DEVOTEE';
 
     if (isAnyDevotee && selectedChannel === MESSAGE_CHANNEL.APPLICATION) {
@@ -116,6 +118,8 @@ class SmsService {
       template = DONATION_THANK_YOU_TEMPLATE;
     } else if (isNotStayingCampaign) {
       template = NOT_STAYING_CONFIRMATION_TEMPLATE;
+    } else if (isAccommodationCampaign) {
+      template = ACCOMMODATION_CONFIRMATION_TEMPLATE;
     } else if (type === SMS_CAMPAIGN_TYPE.CUSTOM) {
       if (!message || !message.trim()) {
         throw ApiError.badRequest('Message is required for a custom campaign.');
@@ -197,12 +201,16 @@ class SmsService {
             2: activeHall.hallName,
             3: activeHall.hallMapLink,
           }
+        : isAccommodationCampaign
+        ? this._getAccommodationTemplateData(registration, activeHall)
         : this._getTemplateData(registration, activeHall);
       const message = renderTemplate(template, templateData);
       const whatsappTemplateName = isDonationCampaign
         ? env.whatsapp.donationTemplateName
         : isNotStayingCampaign
         ? env.whatsapp.notStayingTemplateName
+        : isAccommodationCampaign
+        ? env.whatsapp.accommodationTemplateName || env.whatsapp.defaultTemplateName || null
         : env.whatsapp.defaultTemplateName || null;
       const whatsappComponents = whatsappTemplateName
         ? this._buildTemplateComponents(template, templateData)
@@ -460,6 +468,25 @@ class SmsService {
       hallName: hall ? hall.hallName : '',
       hallAddress: hall ? hall.hallAddress : '',
       hallMap: hall ? hall.hallMapLink : '',
+    };
+  }
+
+  /**
+   * Builds the numbered {{1}}-{{7}} token map for the "Accommodation
+   * Assignment" WhatsApp template (seminar_details_room_full_message):
+   *   1=name, 2=hotelName, 3=hotelAddress, 4=roomNumber, 5=hotelMap,
+   *   6=hallName, 7=hallMap.
+   */
+  _getAccommodationTemplateData(registration, hall) {
+    const assignment = registration.assignment || {};
+    return {
+      1: registration.initiatedName || registration.name,
+      2: assignment.hotelName || '',
+      3: assignment.hotelAddress || '',
+      4: assignment.roomNumber || '',
+      5: assignment.hotelMapLink || '',
+      6: hall ? hall.hallName : '',
+      7: hall ? hall.hallMapLink : '',
     };
   }
 

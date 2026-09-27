@@ -84,6 +84,91 @@ test('Any Devotee sends accommodation template without room assignment', async (
   assert.equal(sentMessages.length, 1);
 });
 
+test('Accommodation campaign uses the dedicated WhatsApp template when configured', async (t) => {
+  const previousAccommodation = env.whatsapp.accommodationTemplateName;
+  const previousDefault = env.whatsapp.defaultTemplateName;
+  env.whatsapp.accommodationTemplateName = 'seminar_details_room_full_message';
+  env.whatsapp.defaultTemplateName = 'registration_confirmation';
+  t.after(() => {
+    env.whatsapp.accommodationTemplateName = previousAccommodation;
+    env.whatsapp.defaultTemplateName = previousDefault;
+  });
+  const mocks = mockSending(t);
+
+  await smsService.sendCampaign({
+    type: 'ACCOMMODATION', channel: 'WHATSAPP', recipientMode: 'ANY_DEVOTEE',
+    registrationIds: [3],
+  }, 1);
+
+  assert.equal(mocks.createCampaign.mock.callCount(), 1);
+  assert.equal(sentMessages[0].templateName, 'seminar_details_room_full_message');
+});
+
+test('Accommodation campaign maps all 7 placeholders in order for the Meta template', async (t) => {
+  const previousAccommodation = env.whatsapp.accommodationTemplateName;
+  env.whatsapp.accommodationTemplateName = 'seminar_details_room_full_message';
+  t.after(() => { env.whatsapp.accommodationTemplateName = previousAccommodation; });
+
+  const registrationWithAssignment = {
+    id: 3,
+    name: 'Attendee',
+    mobileNumber: '9000000003',
+    assignment: {
+      hotelName: 'Hotel Vrindavan',
+      hotelAddress: 'MG Road, Pune',
+      roomNumber: '204',
+      hotelMapLink: 'https://maps.example/hotel',
+    },
+  };
+  t.mock.method(seminarHallService, 'getActive', async () => hall);
+  t.mock.method(smsRepository, 'findRecipients', async () => [registrationWithAssignment]);
+  t.mock.method(smsRepository, 'createCampaign', async () => ({ id: 10 }));
+  t.mock.method(smsRepository, 'createLog', async () => {});
+  t.mock.method(smsRepository, 'updateCampaign', async () => {});
+  sentMessages.length = 0;
+
+  await smsService.sendCampaign({
+    type: 'ACCOMMODATION', channel: 'WHATSAPP', recipientMode: 'ANY_DEVOTEE',
+    registrationIds: [3],
+  }, 1);
+
+  assert.equal(sentMessages[0].templateName, 'seminar_details_room_full_message');
+  assert.deepEqual(
+    sentMessages[0].components[0].parameters.map(({ text }) => text),
+    [
+      'Attendee',
+      'Hotel Vrindavan',
+      'MG Road, Pune',
+      '204',
+      'https://maps.example/hotel',
+      'Main Hall',
+      'https://example.org/hall',
+    ]
+  );
+  // Numbered Meta templates use positional parameters (no parameter_name).
+  assert.equal(sentMessages[0].components[0].parameters.every((p) => !p.parameter_name), true);
+});
+
+test('Accommodation campaign falls back to the default template when no dedicated template is configured', async (t) => {
+  const previousAccommodation = env.whatsapp.accommodationTemplateName;
+  const previousDefault = env.whatsapp.defaultTemplateName;
+  env.whatsapp.accommodationTemplateName = '';
+  env.whatsapp.defaultTemplateName = 'registration_confirmation';
+  t.after(() => {
+    env.whatsapp.accommodationTemplateName = previousAccommodation;
+    env.whatsapp.defaultTemplateName = previousDefault;
+  });
+  const mocks = mockSending(t);
+
+  await smsService.sendCampaign({
+    type: 'ACCOMMODATION', channel: 'WHATSAPP', recipientMode: 'ANY_DEVOTEE',
+    registrationIds: [3],
+  }, 1);
+
+  assert.equal(mocks.createCampaign.mock.callCount(), 1);
+  assert.equal(sentMessages[0].templateName, 'registration_confirmation');
+});
+
 test('Any Devotee rejects empty and missing selections without broadcasting', async (t) => {
   const mocks = mockSending(t);
   const findAll = t.mock.method(smsRepository, 'findAllRecipients', async () => []);
