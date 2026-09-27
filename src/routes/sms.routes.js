@@ -13,6 +13,7 @@ const router = Router();
 // All SMS routes are admin-only
 router.use(authGuard, requireAdmin);
 
+router.get('/donation-only-recipients', smsController.listDonationOnlyRecipients);
 router.post(
   '/campaigns',
   requireEditor,
