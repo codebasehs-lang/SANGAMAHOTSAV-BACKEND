@@ -4,7 +4,13 @@ const {
   Registration,
   AccommodationAssignment,
 } = require('../models');
-const { MESSAGE_CHANNEL, SMS_CAMPAIGN_STATUS } = require('../constants/enums');
+const {
+  MESSAGE_CHANNEL,
+  SMS_CAMPAIGN_STATUS,
+  NON_ATTENDING_TYPE,
+  PAYMENT_STATUS,
+} = require('../constants/enums');
+const { Op } = require('sequelize');
 
 /**
  * Data-access layer for SMS campaigns and logs.
@@ -59,6 +65,25 @@ class SmsRepository {
     return Registration.findAll({
       include: [{ model: AccommodationAssignment, as: 'assignment' }],
     });
+  }
+
+  async findDonationOnlyRecipients(ids) {
+    const where = {
+      non_attending_type: NON_ATTENDING_TYPE.NON_ATTENDING,
+      payment_status: PAYMENT_STATUS.APPROVED,
+    };
+    if (ids) where.id = { [Op.in]: ids };
+
+    const registrations = await Registration.findAll({
+      where,
+      attributes: ['id', 'name', 'initiatedName', 'mobileNumber', 'donationItems'],
+    });
+
+    return registrations.filter(
+      (registration) =>
+        Array.isArray(registration.donationItems) &&
+        registration.donationItems.length > 0
+    );
   }
 
   /** Recent Application-channel messages — shown in registrant notice board. */
