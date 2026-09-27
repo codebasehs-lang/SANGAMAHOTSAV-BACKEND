@@ -2,7 +2,12 @@ const smsRepository = require('../repositories/sms.repository');
 const seminarHallService = require('./seminarHall.service');
 const { sendWhatsapp } = require('../utils/whatsappCloudClient');
 const env = require('../config/env');
-const { TEMPLATES, renderTemplate } = require('../constants/smsTemplates');
+const {
+  TEMPLATES,
+  NOT_STAYING_CONFIRMATION_TEMPLATE,
+  DONATION_THANK_YOU_TEMPLATE,
+  renderTemplate,
+} = require('../constants/smsTemplates');
 const { getPagination, buildMeta } = require('../utils/pagination');
 const ApiError = require('../utils/ApiError');
 const logger = require('../utils/logger');
@@ -11,6 +16,7 @@ const {
   SMS_CAMPAIGN_STATUS,
   SMS_LOG_STATUS,
   MESSAGE_CHANNEL,
+  NON_ATTENDING_TYPE,
 } = require('../constants/enums');
 
 /**
@@ -25,6 +31,25 @@ const {
 class SmsService {
   async sendCampaign({ type, registrationIds, message, channel }, adminId) {
     const selectedChannel = channel || MESSAGE_CHANNEL.WHATSAPP;
+    const isDonationCampaign = type === SMS_CAMPAIGN_TYPE.DONATION;
+
+    if (isDonationCampaign) {
+      if (selectedChannel !== MESSAGE_CHANNEL.WHATSAPP) {
+        throw ApiError.badRequest(
+          'The donation thank-you template is only available on WhatsApp.'
+        );
+      }
+      if (!Array.isArray(registrationIds) || registrationIds.length === 0) {
+        throw ApiError.badRequest(
+          'Select at least one approved donation-only recipient.'
+        );
+      }
+      if (!env.whatsapp.donationTemplateName) {
+        throw ApiError.badRequest(
+          'The donation WhatsApp template is not configured.'
+        );
+      }
+    }
 
     if (selectedChannel === MESSAGE_CHANNEL.APPLICATION) {
       if (!message || !message.trim()) {
@@ -64,7 +89,9 @@ class SmsService {
     }
 
     let template;
-    if (type === SMS_CAMPAIGN_TYPE.CUSTOM) {
+    if (isDonationCampaign) {
+      template = DONATION_THANK_YOU_TEMPLATE;
+    } else if (type === SMS_CAMPAIGN_TYPE.CUSTOM) {
       if (!message || !message.trim()) {
         throw ApiError.badRequest('Message is required for a custom campaign.');
       }
@@ -74,15 +101,26 @@ class SmsService {
       if (!template) throw ApiError.badRequest('Unknown SMS campaign type.');
     }
 
-    const activeHall = await seminarHallService.getActive();
+    const activeHall = isDonationCampaign
+      ? null
+      : await seminarHallService.getActive();
 
-    const recipients =
-      Array.isArray(registrationIds) && registrationIds.length > 0
-        ? await smsRepository.findRecipients(registrationIds)
-        : await smsRepository.findAllRecipients();
+    const recipients = isDonationCampaign
+      ? await smsRepository.findDonationOnlyRecipients(registrationIds)
+      : Array.isArray(registrationIds) && registrationIds.length > 0
+      ? await smsRepository.findRecipients(registrationIds)
+      : await smsRepository.findAllRecipients();
 
     if (recipients.length === 0) {
       throw ApiError.badRequest('No recipients found for this campaign.');
+    }
+    if (
+      isDonationCampaign &&
+      recipients.length !== new Set(registrationIds.map(Number)).size
+    ) {
+      throw ApiError.badRequest(
+        'One or more selected recipients are no longer approved donation-only donors.'
+      );
     }
 
     // Accommodation SMS requires an assignment; skip those without one.
@@ -111,13 +149,15 @@ class SmsService {
     let failedCount = 0;
 
     for (const registration of eligible) {
-      const message = this._render(template, registration, activeHall);
-      const whatsappTemplateName = env.whatsapp.defaultTemplateName || null;
+      const templateData = isDonationCampaign
+        ? { 1: registration.initiatedName || registration.name }
+        : this._getTemplateData(registration, activeHall);
+      const message = renderTemplate(template, templateData);
+      const whatsappTemplateName = isDonationCampaign
+        ? env.whatsapp.donationTemplateName
+        : env.whatsapp.defaultTemplateName || null;
       const whatsappComponents = whatsappTemplateName
-        ? this._buildTemplateComponents(
-            template,
-            this._getTemplateData(registration, activeHall)
-          )
+        ? this._buildTemplateComponents(template, templateData)
         : null;
       // eslint-disable-next-line no-await-in-loop
       if (selectedChannel === MESSAGE_CHANNEL.SMS) {
@@ -196,6 +236,19 @@ class SmsService {
     return { data: rows, meta: buildMeta({ count, page, limit }) };
   }
 
+  async listDonationOnlyRecipients() {
+    const registrations = await smsRepository.findDonationOnlyRecipients();
+    return registrations.map((registration) => ({
+      id: registration.id,
+      name: registration.initiatedName || registration.name,
+      mobileNumber: registration.mobileNumber,
+      donationAmount: registration.donationItems.reduce(
+        (total, donation) => total + Number(donation.amount || 0),
+        0
+      ),
+    }));
+  }
+
   async listLogs(campaignId, query) {
     const campaign = await smsRepository.findCampaignById(campaignId);
     if (!campaign) throw ApiError.notFound('Campaign not found.');
@@ -215,26 +268,50 @@ class SmsService {
    * is fully auditable in the SMS logs.
    */
   async sendPaymentConfirmation(registration, adminId) {
-    const template = TEMPLATES[SMS_CAMPAIGN_TYPE.PAYMENT_CONFIRMED];
+    const useNotStayingTemplate =
+      registration.nonAttendingType ===
+        NON_ATTENDING_TYPE.ATTENDING_NOT_STAYING &&
+      Boolean(env.whatsapp.notStayingTemplateName);
+    const hall = useNotStayingTemplate
+      ? await seminarHallService.getActive()
+      : null;
+    if (useNotStayingTemplate && (!hall || !hall.hallMapLink)) {
+      throw ApiError.badRequest(
+        'An active seminar hall with a map link is required for this WhatsApp template.'
+      );
+    }
+    const template = useNotStayingTemplate
+      ? NOT_STAYING_CONFIRMATION_TEMPLATE
+      : TEMPLATES[SMS_CAMPAIGN_TYPE.PAYMENT_CONFIRMED];
     const devoteeName = registration.initiatedName || registration.name || '';
-    const familyMembers = Array.isArray(registration.familyMembers)
-      ? registration.familyMembers.filter((member) => member && member.name)
-      : [];
-    const accommodation = registration.sharedAccommodation || registration.familyAccommodation;
-    const accommodationLabels = {
-      DORMITORY: 'AC Dormitory',
-      NON_AC_SHARING: 'Non AC Sharing',
-      AC_SHARING: 'AC Sharing Room',
-      DELUXE_AC: 'Deluxe AC Room',
-      PREMIUM_AC: 'Premium AC Room',
-    };
-    const devoteeCount = familyMembers.length + 1;
-    const templateData = {
-      name: devoteeName,
-      amount: Number(registration.amountPaid || 0).toLocaleString('en-IN'),
-      accommodation: accommodationLabels[accommodation] || 'accommodation',
-      devoteeText: `${devoteeCount} ${devoteeCount === 1 ? 'devotee' : 'devotees'}`,
-    };
+    let templateData;
+    if (useNotStayingTemplate) {
+      templateData = {
+        1: devoteeName,
+        2: hall ? hall.hallName : '',
+        3: hall ? hall.hallMapLink || '' : '',
+      };
+    } else {
+      const familyMembers = Array.isArray(registration.familyMembers)
+        ? registration.familyMembers.filter((member) => member && member.name)
+        : [];
+      const accommodation =
+        registration.sharedAccommodation || registration.familyAccommodation;
+      const accommodationLabels = {
+        DORMITORY: 'AC Dormitory',
+        NON_AC_SHARING: 'Non AC Sharing',
+        AC_SHARING: 'AC Sharing Room',
+        DELUXE_AC: 'Deluxe AC Room',
+        PREMIUM_AC: 'Premium AC Room',
+      };
+      const devoteeCount = familyMembers.length + 1;
+      templateData = {
+        name: devoteeName,
+        amount: Number(registration.amountPaid || 0).toLocaleString('en-IN'),
+        accommodation: accommodationLabels[accommodation] || 'accommodation',
+        devoteeText: `${devoteeCount} ${devoteeCount === 1 ? 'devotee' : 'devotees'}`,
+      };
+    }
     const templatePlaceholders = this._getTemplateTokens(template);
     const renderedMessage = renderTemplate(template, templateData);
 
@@ -248,8 +325,11 @@ class SmsService {
       triggeredBy: adminId,
     });
 
-    const paymentTemplateName =
-      env.whatsapp.paymentTemplateName || env.whatsapp.defaultTemplateName || null;
+    const paymentTemplateName = useNotStayingTemplate
+      ? env.whatsapp.notStayingTemplateName
+      : env.whatsapp.paymentTemplateName ||
+        env.whatsapp.defaultTemplateName ||
+        null;
 
     const templateComponents = paymentTemplateName
       ? this._buildTemplateComponents(template, templateData)
