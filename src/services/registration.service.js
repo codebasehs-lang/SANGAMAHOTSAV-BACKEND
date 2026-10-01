@@ -84,6 +84,37 @@ class RegistrationService {
 
   async updateAttendance(id, { action, memberIndexes = [] }, adminId) {
     const registration = await this.getById(id);
+    if (action === 'RESET') {
+      const familyMembers = Array.isArray(registration.familyMembers)
+        ? registration.familyMembers.map((member) => {
+          const resetMember = { ...member };
+          delete resetMember.checkedIn;
+          delete resetMember.checkedInAt;
+          delete resetMember.checkedInBy;
+          delete resetMember.checkedOut;
+          delete resetMember.checkedOutAt;
+          delete resetMember.checkedOutBy;
+          return resetMember;
+        })
+        : [];
+
+      await registrationRepository.update(id, {
+        attendanceStatus: 'NOT_ARRIVED',
+        checkedInAt: null,
+        checkedInBy: null,
+        checkedOutAt: null,
+        checkedOutBy: null,
+        hotelKeyGiven: false,
+        hotelKeyGivenAt: null,
+        hotelKeyGivenBy: null,
+        hotelKeyReturned: false,
+        hotelKeyReturnedAt: null,
+        hotelKeyReturnedBy: null,
+        familyMembers,
+      });
+      return this.getById(id);
+    }
+
     const selectedIndexes = [...new Set((Array.isArray(memberIndexes) ? memberIndexes : []).map(Number))];
     const familyMembers = Array.isArray(registration.familyMembers)
       ? registration.familyMembers.map((member) => ({ ...member }))
