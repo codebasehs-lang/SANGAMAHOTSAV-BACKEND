@@ -30,7 +30,7 @@ router.put('/children/gift-status', requireEditor, registrationController.update
 router.get('/attendance/lookup', registrationController.attendanceLookup);
 router.get('/', validate(listQueryRules), registrationController.list);
 router.get('/:id', validate(idParamRule), registrationController.getById);
-router.put('/:id/attendance', requireEditor, validate(idParamRule), registrationController.updateAttendance);
+router.put('/:id/attendance', validate(idParamRule), registrationController.updateAttendance);
 router.put('/:id/approve-payment', requireEditor, validate(idParamRule), registrationController.approvePayment);
 router.put('/:id/unapprove-payment', requireEditor, validate(idParamRule), registrationController.unapprovePayment);
 router.put('/:id', requireEditor, validate(updateRegistrationRules), registrationController.update);
