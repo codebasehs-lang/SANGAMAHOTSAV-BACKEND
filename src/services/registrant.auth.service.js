@@ -139,7 +139,7 @@ class RegistrantAuthService {
       throw ApiError.notFound(messages.NOT_FOUND);
     }
 
-    const noticeBoardMessages = await smsRepository.findNoticeBoardMessages({ limit: 5 });
+    const noticeBoardMessages = await smsRepository.findNoticeBoardMessages({ limit: 50 });
     const activeSeminarHall = await seminarHallService.getActive();
     if (!registration.checkinToken) {
       registration.checkinToken = crypto.randomBytes(24).toString('hex');
