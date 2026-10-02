@@ -35,6 +35,13 @@ class RegistrationRepository {
     });
   }
 
+  findAllForAttendanceSummary() {
+    return Registration.findAll({
+      attributes: ['attendanceStatus', 'familyMembers'],
+      raw: true,
+    });
+  }
+
   findById(id, options = {}) {
     return Registration.findByPk(id, options);
   }

@@ -27,6 +27,7 @@ router.get('/export', registrationController.export);
 router.get('/children/export', registrationController.exportChildren);
 router.get('/children', registrationController.getChildren);
 router.put('/children/gift-status', requireEditor, registrationController.updateChildGiftStatus);
+router.get('/attendance/summary', registrationController.attendanceSummary);
 router.get('/attendance/lookup', registrationController.attendanceLookup);
 router.get('/', validate(listQueryRules), registrationController.list);
 router.get('/:id', validate(idParamRule), registrationController.getById);

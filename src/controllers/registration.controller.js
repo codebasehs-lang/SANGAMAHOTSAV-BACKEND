@@ -60,6 +60,11 @@ class RegistrationController {
     return ApiResponse.send(res, { data, message: messages.FETCHED });
   });
 
+  attendanceSummary = asyncHandler(async (_req, res) => {
+    const data = await registrationService.getAttendanceSummary();
+    return ApiResponse.send(res, { data, message: messages.FETCHED });
+  });
+
   updateAttendance = asyncHandler(async (req, res) => {
     const registration = await registrationService.updateAttendance(
       req.params.id,

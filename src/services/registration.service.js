@@ -82,6 +82,28 @@ class RegistrationService {
     return registrationRepository.searchForAttendance(search?.trim(), status);
   }
 
+  async getAttendanceSummary() {
+    const registrations = await registrationRepository.findAllForAttendanceSummary();
+    const checkedInStatuses = new Set(['PARTIALLY_ARRIVED', 'CHECKED_IN', 'CHECKED_OUT']);
+
+    return registrations.reduce((summary, registration) => {
+      const familyMembers = Array.isArray(registration.familyMembers)
+        ? registration.familyMembers.filter(Boolean)
+        : [];
+
+      const status = registration.attendanceStatus || 'NOT_ARRIVED';
+      summary.totalDevotees += 1 + familyMembers.length;
+      if (checkedInStatuses.has(status)) summary.checkedIn += 1;
+      summary.checkedIn += familyMembers.filter((member) => member.checkedIn).length;
+      if (status in summary.byStatus) summary.byStatus[status] += 1;
+      return summary;
+    }, {
+      totalDevotees: 0,
+      checkedIn: 0,
+      byStatus: { NOT_ARRIVED: 0, PARTIALLY_ARRIVED: 0, CHECKED_IN: 0, CHECKED_OUT: 0 },
+    });
+  }
+
   async updateAttendance(id, { action, memberIndexes = [] }, adminId) {
     const registration = await this.getById(id);
     if (action === 'RESET') {

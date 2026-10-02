@@ -111,7 +111,7 @@ class SmsRepository {
         status: SMS_CAMPAIGN_STATUS.COMPLETED,
       },
       attributes: ['id', 'messageTemplate', 'createdAt'],
-      order: [['created_at', 'DESC']],
+      order: [['created_at', 'DESC'], ['id', 'DESC']],
       limit,
     });
   }
